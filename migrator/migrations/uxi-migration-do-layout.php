@@ -1,6 +1,7 @@
 <?php
 
 function uxi_do_layout($dom, $post_id = false, $slug = false) {
+	return;
 	if (function_exists('update_field')) {
 
 		$xpath = new DOMXpath($dom);

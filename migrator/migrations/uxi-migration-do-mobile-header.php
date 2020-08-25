@@ -1,6 +1,7 @@
 <?php
 
 function uxi_do_mobile_header($dom) {
+	return;
 	if (function_exists('update_field')) {
 
 		uxi_print("Start Mobile Header.").

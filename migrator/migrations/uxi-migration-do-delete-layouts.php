@@ -1,6 +1,7 @@
 <?php
 
 function uxi_delete_layouts() {
+	return;
 	$args = array (
 		'post_type' => array (
 			'uxi-header-layout',

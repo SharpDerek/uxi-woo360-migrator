@@ -1,6 +1,7 @@
 <?php
 
 function uxi_do_external_assets($css, $href) {
+	return;
 	foreach(explode('url(',$css) as $url) {
 		$thisUrl = explode(')',$url)[0];
 		$filepath = uxi_filepath_navigate($href,$thisUrl);

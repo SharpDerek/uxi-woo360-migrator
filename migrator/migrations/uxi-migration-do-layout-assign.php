@@ -1,7 +1,7 @@
 <?php
 
 function uxi_do_layout_assign($dom, $post_id, $slug = false) {
-
+	return;
 	$xpath = new DOMXpath($dom);
 
 	$layout_assign = array();

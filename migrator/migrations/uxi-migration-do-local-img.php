@@ -1,5 +1,6 @@
 <?php
 function uxi_do_local_img($css) {
+	return;
 	if (defined('UXI_ASSET_URL')) {
 		if (UXI_ASSET_URL) {
 			foreach(explode('url(',$css) as $partial) {

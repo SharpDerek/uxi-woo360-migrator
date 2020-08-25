@@ -36,7 +36,6 @@
 #migrator-progress-wrap,
 #migrator-accordion-progress-wrap {
 	width:100%;
-	max-width:500px;
 	background: #737373;
 	overflow:hidden;
 	border-radius: 50px;
@@ -45,12 +44,14 @@
 	display:table;
 }
 #migrator-accordion-progress-wrap {
-	max-width: 200px;
     height: 20px;
     position: absolute;
     top: 10px;
     right: 15px;
     vertical-align: middle;
+    width: auto;
+    padding: 0px 20px;
+    white-space: nowrap;
 }
 .active #migrator-accordion-progress-wrap {
 	display:none;

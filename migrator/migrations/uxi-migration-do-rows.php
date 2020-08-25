@@ -1,6 +1,7 @@
 <?php
 
 function uxi_do_rows($dom, $xpath, $query, $layout, $nested, $fields = array() ) {
+	return;
 	if (function_exists('update_field')) {
 		define("UXI_ITEM",true);
 

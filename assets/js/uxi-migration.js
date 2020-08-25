@@ -1,88 +1,60 @@
 (function($) {
 
-	function hit_endpoint(index, subindex) {
-		if (index < Object.keys(postObj).length) {
-			updateProgress(Object.keys(postObj).length, index + 1, Object.keys(postObj)[index], subindex, postObj[Object.keys(postObj)[index]].length);
-			var ajaxData = {};
-			switch(Object.keys(postObj)[index]) {
-				case 'assets':
-					ajaxData = {
-						'_wpnonce': nonce,
-						'do_assets': 1,
-						'uxi_url': uxi_url
-					}
-					break;
-				case 'scripts':
-					ajaxData = {
-						'_wpnonce': nonce,
-						'do_scripts': 1,
-						'uxi_url': uxi_url
-					}
-					break;
-				case 'mobile':
-					ajaxData = {
-						'_wpnonce': nonce,
-						'do_mobile': 1,
-						'uxi_url': uxi_url
-					}
-					break;
-				case 'do_location_settings':
-					ajaxData = {
-						'_wpnonce': nonce,
-						'do_location_settings': 1,
-						'uxi_url': uxi_url
-					}
-					break;
-				case 'do_finalization':
-					ajaxData = {
-						'_wpnonce': nonce,
-						'do_finalization': 1,
-						'uxi_url': uxi_url
-					}
-					break;
-				default:
-					if (postObj[Object.keys(postObj)[index]][subindex] == 'finalize') {
-						ajaxData = {
-							'_wpnonce': nonce,
-							'finalize_post_type': Object.keys(postObj)[index],
-							'uxi_url': uxi_url
-						}
-					} else {
-						ajaxData = {
-							'_wpnonce': nonce,
-							'post_id': postObj[Object.keys(postObj)[index]][subindex],
-							'uxi_url': uxi_url
-						}
-					}
-					break;
-			}
-			if (subindex < postObj[Object.keys(postObj)[index]].length) {
-				$.ajax({
-					type: "POST",
-					url: "/wp-json/uxi-migrator/page-scraper",
-					data: ajaxData
+	function hitEndpoint(postTypeIndex, postIndex) {
+		const postTypeArray = Object.keys(migrationSettings.post_obj);
 
-				})
-				.done(function(response) {
-					hit_endpoint(index, ++subindex);
-					updateProgress(Object.keys(postObj).length, index + 1, Object.keys(postObj)[index], subindex, postObj[Object.keys(postObj)[index]].length);
-					updateProgressLog(response);
-				})
-				.fail(function() {
-					updateProgressLog(skipStep());
-					hit_endpoint(index, ++subindex);
-				});
-			} else {
-				hit_endpoint(++index,0);
-			}
+		if (postTypeIndex >= postTypeArray.length) {
+			return;
+		}
+
+		const postType = postTypeArray[postTypeIndex];
+		const posts = migrationSettings.post_obj[postType];
+		const postId = posts[postIndex];
+
+		updateProgress(
+			postTypeIndex + 1,
+			postTypeArray.length,
+			postType,
+			postIndex,
+			posts.length
+		);
+
+		var ajaxData = {
+			_wpnonce: migrationSettings.nonce,
+			uxi_url: migrationSettings.uxi_url,
+			post_id: postId,
+			post_type: postType
+		};
+
+		if (postIndex < posts.length) {
+			$.ajax({
+				type: "POST",
+				url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-post-data",
+				data: ajaxData
+			})
+			.done(function(response) {
+				hitEndpoint(postTypeIndex, ++postIndex);
+				updateProgress(
+					postTypeIndex + 1,
+					postTypeArray.length,
+					postType,
+					postIndex,
+					posts.length
+				);
+				updateProgressLog(`
+					<p><a href="${response.url}" target="_blank">${response.filename}</a> created. (${response.filesize / 1000}KB)</p>
+				`);
+			})
+			.fail(function() {
+				//updateProgressLog(skipStep());
+				hitEndpoint(postTypeIndex, ++postIndex);
+			});
+		} else {
+			hitEndpoint(++postTypeIndex, 0);
 		}
 	}
 
-	function skipStep() {
-		return '<em>Something went wrong. Skipping this post.</em><br>';
-	}
-
-	function updateProgress(totalsteps, curstep, type, curvalue, maxvalue) {
+	function updateProgress(curstep, totalsteps, type, curvalue, maxvalue) {
 		var progwrap = $('#migrator-progress-wrap');
 		var progAwrap = $('#migrator-accordion-progress-wrap');
 		if (typeof progwrap !== "undefined") {
@@ -91,16 +63,16 @@
 			var progAinner = progAwrap.find("#migrator-accordion-progress-inner");
 			var progApercent = progAwrap.find("#migrator-accordion-progress-percent");
 			var title = $('title');
-			var value = Math.floor(curvalue/maxvalue * 100);
+			var value = Math.floor(curvalue / maxvalue * 100);
 
-			proginner.css("width",value + "%");
-			progAinner.css("width",value + "%");
-			if (totalsteps/curstep == 1 && maxvalue/curvalue == 1) {
+			proginner.css("width", value + "%");
+			progAinner.css("width", value + "%");
+			if (totalsteps / curstep == 1 && maxvalue / curvalue == 1) {
 				progpercent.html("Migration complete!!");
 				progApercent.html("Migration complete!!");
 			} else {
-				progpercent.html(type + ((type == 'assets' || type == 'mobile' || type == 'scripts') ? ": " : "s: ") + value + "%<br>Step "+curstep+"/"+totalsteps);
-				progApercent.html(type + ((type == 'assets' || type == 'mobile' || type == 'scripts') ? ": " : "s: ") + value + "% | Step "+curstep+"/"+totalsteps);
+				progpercent.html(`${type} ${curvalue}/${maxvalue}<br>Step ${curstep}/${totalsteps}`);
+				progApercent.html(`${type} ${curvalue}/${maxvalue} | Step ${curstep}/${totalsteps}`);
 			}
 			title.html(progpercent.html().replace("<br>", " | "));
 		}
@@ -109,7 +81,7 @@
 	function updateProgressLog(message) {
 		var proglog = $('#migrator-progress-log');
 		if (typeof proglog !== "undefined") {
-			proglog.html(proglog.html() + message + "<br>");
+			proglog.html(proglog.html() + message);
 			if (!proglog.is(":hover") && !proglog.is(":focus")) {
 				proglog.scrollTop(proglog.prop('scrollHeight'));
 			}
@@ -117,9 +89,14 @@
 	}
 
 	$(document).ready(function() {
-		if (typeof do_rest !== "undefined") {
-			hit_endpoint(0, 0);
+		if (typeof migrationSettings !== "undefined") {
+			migrationSettings.completed_posts = [];
+			hitEndpoint(0, 0);
 		}
+		doAccordion();
+	});
+
+	function doAccordion() {
 		$('.migrator-accordion-item .migrator-accordion-title').each(function() {
 			if (!$(this).parent().hasClass('active')) {
 				$(this).parent().find('.migrator-accordion-content').hide();
@@ -129,6 +106,6 @@
 				$(this).parent().find('.migrator-accordion-content').slideToggle();
 			});
 		});
-	});
+	}
 
 })(jQuery);

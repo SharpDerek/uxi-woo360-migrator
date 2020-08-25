@@ -1,6 +1,7 @@
 <?php
 
 function uxi_do_layout_count($post_id, $layout_id) {
+	return;
 	$layout_uses = get_post_meta($layout_id, 'uxi_template_uses', true) + 1;
 
 	update_post_meta(

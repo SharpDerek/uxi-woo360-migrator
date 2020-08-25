@@ -1,6 +1,7 @@
 <?php
 
 function uxi_finalize_post_type($post_type) {
+	return;
 	if (function_exists('update_field')) {
 
 		$post_type_templates = get_option('uxi_layout_counts')[$post_type];

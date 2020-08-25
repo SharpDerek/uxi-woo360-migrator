@@ -1,6 +1,7 @@
 <?php
 	
 function uxi_do_locations() {
+	return;
 	if (class_exists('WP_Store_locator')) {
 
 		// Change WPSL Settings

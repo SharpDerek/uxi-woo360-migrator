@@ -1,7 +1,7 @@
 <?php
 
 function uxi_do_scripts($dom) {
-
+	return;
 	$xpath = new DOMXpath($dom);
 	$script_locations = array (
 		'head' => '//head//script[contains(@src,"uxi-site")]',

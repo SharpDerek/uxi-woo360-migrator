@@ -1,5 +1,5 @@
 <div class="wrap">
-	<h1 class="wp-heading-inline">UXI MIGRATOR</h1>
+	<h1 class="wp-heading-inline">UXi MIGRATOR</h1>
 
 	<div class="migrator-wrap">
 

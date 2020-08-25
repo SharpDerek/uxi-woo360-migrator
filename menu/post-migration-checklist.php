@@ -27,13 +27,7 @@
 			</a>
 		</li>
 		<li>
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=uxi-header-layout'); ?>" target="_blank">
-				Header</a>, 
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=uxi-main-layout'); ?>" target="_blank">
-				Page</a>, and 
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=uxi-footer-layout'); ?>" target="_blank">
-				Footer</a>
-				layouts renamed to something more sensible 
+			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=fl-theme-layout'); ?>" target="_blank">Themer layouts</a> renamed to something more sensible 
 		</li>
 		<li>
 			<b><a href="<?php echo get_dashboard_url(0, 'plugins.php'); ?>" target="_blank">
