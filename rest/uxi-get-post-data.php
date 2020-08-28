@@ -2,7 +2,7 @@
 
 require_once(UXI_MIGRATOR_PATH . 'classes/class-uxi-common.php');
 require_once(UXI_MIGRATOR_PATH . 'classes/class-uxi-parsed-content.php');
-require_once(UXI_MIGRATOR_PATH . 'classes/class-uxi-json-handler.php');
+require_once(UXI_MIGRATOR_PATH . 'classes/class-uxi-files-handler.php');
 
 function uxi_get_post_data(WP_REST_Request $request){
 	if (!check_ajax_referer('wp_rest', '_wpnonce') ){
@@ -30,8 +30,8 @@ function uxi_get_post_data(WP_REST_Request $request){
 		$parsed_layouts[$layout_section] = $parsed_layout_section->content;
 	}
 
-	$filename = "uxi-{$post_type}-{$post_id}";
+	$filename = "uxi-{$post_type}-{$post_id}.json";
 	$json = json_encode($parsed_layouts, JSON_PRETTY_PRINT);
 
-	return UXI_JSON_Handler::upload_json($json, $filename);
+	return UXI_Files_Handler::upload_file($json, $filename);
 }

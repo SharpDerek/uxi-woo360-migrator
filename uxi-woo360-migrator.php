@@ -9,6 +9,7 @@ Author: Madwire
 define('UXI_MIGRATOR_URL', plugin_dir_url(__FILE__));
 define('UXI_MIGRATOR_PATH', plugin_dir_path(__FILE__));
 
+require_once(UXI_MIGRATOR_PATH . 'vendor/autoload.php');
 
 // Register Migration Dashboard
 function uxi_menu_page() {
@@ -28,9 +29,21 @@ add_action('admin_menu','uxi_menu_page');
 
 // Register Rest Endpoints
 function uxi_rest() {
+	require(UXI_MIGRATOR_PATH . 'rest/uxi-get-stylesheet.php');
+	register_rest_route('uxi-migrator', '/uxi-get-stylesheet', array(
+		'methods' => 'GET',
+		'callback' => 'uxi_get_stylesheet'
+	));
+
+	require(UXI_MIGRATOR_PATH . 'rest/uxi-parse-stylesheet.php');
+	register_rest_route('uxi-migrator', '/uxi-parse-stylesheet', array(
+		'methods' => 'GET',
+		'callback' => 'uxi_parse_stylesheet'
+	));
+
 	require(UXI_MIGRATOR_PATH . 'rest/uxi-get-post-data.php');
 	register_rest_route('uxi-migrator', '/uxi-get-post-data', array(
-		'methods' => 'POST',
+		'methods' => 'GET',
 		'callback' => 'uxi_get_post_data'
 	));
 }

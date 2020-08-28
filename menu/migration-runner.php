@@ -50,10 +50,17 @@
 			  $nonce = 'none';
 			}
 
+			$stylesheets = array(
+				'uxi-site-custom-css'
+			);
+
 			$migration_settings = array(
 				'site_url' => get_site_url(),
 				'uxi_url' => trailingslashit($_POST['uxi-url']),
-				'post_obj' => array(),
+				'post_obj' => array(
+					'stylesheet' => $stylesheets,
+					'parsed_stylesheet' => $stylesheets,
+				),
 				'nonce' => $nonce
 			);
 
