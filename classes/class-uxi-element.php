@@ -16,6 +16,7 @@ class UXI_Element {
 		$this->doAttributes($domNode);
 		$this->doSizes();
 		$this->doContent($dom, $domNode);
+		$this->doStyles();
 	}
 
 	function doAttributes($domNode) {
@@ -75,5 +76,22 @@ class UXI_Element {
 		$widget_query = new UXI_Parse_Query('//*[@class="content"]/*');
 		
 		$this->html = $widget_query->query_html($dom);
+	}
+
+	function doStyles() {
+		switch($this->element_type) {
+			case 'row':
+			case 'row_nested':
+			case 'widget':
+			case 'widget_nested':
+				break;
+			default:
+				return;
+		}
+
+		require_once(plugin_dir_path(__FILE__) . 'class-uxi-element-styles.php');
+
+		$styles = new UXI_Element_Styles($this);
+		$this->styles = $styles->rules;
 	}
 }

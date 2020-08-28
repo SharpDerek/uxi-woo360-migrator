@@ -19,19 +19,47 @@
 			posts.length
 		);
 
-		var ajaxData = {
-			_wpnonce: migrationSettings.nonce,
-			uxi_url: migrationSettings.uxi_url,
-			post_id: postId,
-			post_type: postType
-		};
+		let ajaxData = {};
+
+		switch(postType) {
+			case 'stylesheet':
+				ajaxData = {
+					type: "GET",
+					url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-stylesheet",
+					data: {
+						_wpnonce: migrationSettings.nonce,
+						uxi_url: migrationSettings.uxi_url,
+						id: postId
+					}
+				};
+				break;
+			case 'parsed_stylesheet':
+				ajaxData = {
+					type: "GET",
+					url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-parse-stylesheet",
+					data: {
+						_wpnonce: migrationSettings.nonce,
+						uxi_url: migrationSettings.uxi_url,
+						id: postId
+					}
+				};
+				break;
+			default:
+				ajaxData = {
+					type: "GET",
+					url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-post-data",
+					data: {
+						_wpnonce: migrationSettings.nonce,
+						uxi_url: migrationSettings.uxi_url,
+						post_id: postId,
+						post_type: postType
+					}
+				};
+				break;
+		}
 
 		if (postIndex < posts.length) {
-			$.ajax({
-				type: "POST",
-				url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-post-data",
-				data: ajaxData
-			})
+			$.ajax(ajaxData)
 			.done(function(response) {
 				hitEndpoint(postTypeIndex, ++postIndex);
 				updateProgress(
