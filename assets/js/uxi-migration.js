@@ -1,27 +1,27 @@
 (function($) {
 
-	function hitEndpoint(postTypeIndex, postIndex) {
-		const postTypeArray = Object.keys(migrationSettings.post_obj);
+	function hitEndpoint(stepNumber, itemNumber) {
+		const steps = Object.keys(migrationSettings.post_obj);
 
-		if (postTypeIndex >= postTypeArray.length) {
+		if (stepNumber >= steps.length) {
 			return;
 		}
 
-		const postType = postTypeArray[postTypeIndex];
-		const posts = migrationSettings.post_obj[postType];
-		const postId = posts[postIndex];
+		const step = steps[stepNumber];
+		const posts = migrationSettings.post_obj[step];
+		const postId = posts[itemNumber];
 
 		updateProgress(
-			postTypeIndex + 1,
-			postTypeArray.length,
-			postType,
-			postIndex,
+			stepNumber + 1,
+			steps.length,
+			step,
+			itemNumber,
 			posts.length
 		);
 
 		let ajaxData = {};
 
-		switch(postType) {
+		switch(step) {
 			case 'stylesheet':
 				ajaxData = {
 					type: "GET",
@@ -44,6 +44,32 @@
 					}
 				};
 				break;
+			case 'compile_json':
+				ajaxData = {
+					type: "GET",
+					url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-compile-json",
+					data: {
+						_wpnonce: migrationSettings.nonce,
+						uxi_url: migrationSettings.uxi_url,
+						posts: posts,
+						id: postId
+					}
+				}
+				break;
+			case 'archives':
+			case 'endpoints':
+				ajaxData = {
+					type: "GET",
+					url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-post-data",
+					data: {
+						_wpnonce: migrationSettings.nonce,
+						uxi_url: migrationSettings.uxi_url,
+						post_id: postId,
+						post_type: step,
+						slug: postId
+					}
+				};
+				break;
 			default:
 				ajaxData = {
 					type: "GET",
@@ -52,33 +78,33 @@
 						_wpnonce: migrationSettings.nonce,
 						uxi_url: migrationSettings.uxi_url,
 						post_id: postId,
-						post_type: postType
+						post_type: step
 					}
 				};
 				break;
 		}
 
-		if (postIndex < posts.length) {
+		if (itemNumber < posts.length) {
 			$.ajax(ajaxData)
 			.done(function(response) {
-				hitEndpoint(postTypeIndex, ++postIndex);
+				hitEndpoint(stepNumber, ++itemNumber);
 				updateProgress(
-					postTypeIndex + 1,
-					postTypeArray.length,
-					postType,
-					postIndex,
+					stepNumber + 1,
+					steps.length,
+					step,
+					itemNumber,
 					posts.length
 				);
 				updateProgressLog(`
-					<p><a href="${response.url}" target="_blank">${response.filename}</a> created. (${response.filesize / 1000}KB)</p>
+					<p><a href="${response.url}" target="_blank">${response.filename}</a> ${response.status}. (${response.filesize / 1000}KB)</p>
 				`);
 			})
 			.fail(function() {
 				//updateProgressLog(skipStep());
-				hitEndpoint(postTypeIndex, ++postIndex);
+				hitEndpoint(stepNumber, ++itemNumber);
 			});
 		} else {
-			hitEndpoint(++postTypeIndex, 0);
+			hitEndpoint(++stepNumber, 0);
 		}
 	}
 
