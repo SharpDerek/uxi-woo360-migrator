@@ -64,6 +64,9 @@
 				'nonce' => $nonce
 			);
 
+			$post_obj = array();
+			$compile_json = array('init');
+
 			foreach($_POST['migrations']['post_types'] as $post_type) {
 				$post_query = new WP_Query(
 					array(
@@ -76,19 +79,50 @@
 					while($post_query->have_posts()) {
 						$post_query->the_post();
 						$post_array[] = get_the_ID();
+						$compile_json[] = array(
+							'post_type' => $post_type,
+							'post_id' => get_the_ID(),
+						);
 					}
-					$migration_settings['post_obj'][$post_type] = $post_array;
+					$post_obj[$post_type] = $post_array;
 				}
 				wp_reset_postdata();
 			}
 
-			if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
-				$migration_settings['do_location_settings'] = true;
+			$extras = array(
+				'archives' => array(),
+				'endpoints' => array(
+					'404'
+				)
+			);
+
+			if (in_array('mad360_testimonial', $_POST['migrations'])) {
+				$extras['archives'][] = 'testimonials';
 			}
+
+			foreach($extras as $type => $contents) {
+				foreach($contents as $content_type) {
+					$compile_json[] = array (
+						'post_type' => $type,
+						'post_id' => $content_type
+					);
+				}
+			}
+
+			$migration_settings['post_obj'] = array_merge(
+				$migration_settings['post_obj'],
+				$post_obj,
+				$extras,
+				array('compile_json' => $compile_json)
+			);
+
+			// if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
+			// 	$migration_settings['do_location_settings'] = true;
+			// }
 
 			ob_start(); ?>
 				<script>
-					const migrationSettings = <?php echo json_encode($migration_settings); ?>;
+					const migrationSettings = <?php echo json_encode($migration_settings, JSON_PRETTY_PRINT); ?>;
 				</script>
 			<?php echo ob_get_clean(); ?>
 
