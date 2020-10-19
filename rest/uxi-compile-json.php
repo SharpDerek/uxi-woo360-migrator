@@ -79,6 +79,7 @@ function uxi_compile_json(WP_REST_Request $request){
 
 			$compiled['globals'] = array(
 				'uxi-header' => $compiled['post_types']['page']['uxi-header']['main_layout'],
+				'uxi-main'	 => $compiled['post_types']['page']['uxi-main']	 ['main_layout'],
 				'uxi-footer' => $compiled['post_types']['page']['uxi-footer']['main_layout'],
 			);
 

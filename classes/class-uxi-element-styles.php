@@ -5,7 +5,6 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-files-handler.php');
 class UXI_Element_Styles {
 
 	public $rules = array();
-	public $debug_shit = array();
 
 	public function __construct($uxi_element) {
 		$parsed_css = UXI_Files_Handler::get_file('uxi-site-custom-css-parsed.json');
@@ -36,8 +35,6 @@ class UXI_Element_Styles {
 		foreach($parsed_css as $ruleset) {
 			$ruleset_relevant = false;
 			foreach($ruleset['selectors'] as $selector) {
-
-				//$this->debug_shit[] = $this->regex($id);
 				if ($id) {
 					if (preg_match($this->regex($id), $selector) === 1) {
 						$ruleset_relevant = true;

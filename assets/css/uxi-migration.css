@@ -121,3 +121,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+#migrator-progress-log h4 {
+	margin-bottom: 0;
+}
+#migrator-progress-log ul {
+	margin-top:5px;
+	padding-left: 20px;
+	list-style-type: disc;
+}

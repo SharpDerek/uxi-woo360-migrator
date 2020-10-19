@@ -8,31 +8,67 @@ class UXI_Parsed_CSS {
 		$cssParser = new Sabberworm\CSS\Parser($css);
 		$parsed_css = $cssParser->parse();
 
-		foreach($parsed_css->getAllDeclarationBlocks() as $block) {
-			$selectors = array();
-			//$relevantItems = array();
-			$rules = array();
-			foreach($block->getSelectors() as $selector) {
-				$thisSelector = $selector->getSelector();
-				$selectors[] = $thisSelector;
-				// foreach(explode(" ", $thisSelector) as $item) {
-				// 	if (!in_array($item, $relevantItems)) {
-				// 		$relevantItems[] = $item;
-				// 	}
-				// }
+		//var_dump($parsed_css);
+
+		foreach($parsed_css->getContents() as $contents) {
+			switch(get_class($contents)) {
+				case 'Sabberworm\CSS\RuleSet\AtRuleSet':
+					$this->contents[] = $this->getAtRuleSet($contents);
+					break;
+				case 'Sabberworm\CSS\RuleSet\DeclarationBlock':
+					$this->contents[] = $this->getDeclarationBlock($contents);
+					break;
+				case 'Sabberworm\CSS\CSSList\AtRuleBlockList':
+					$this->contents = array_merge($this->contents, $this->getAtRuleBlockList($contents));
+					break;
 			}
-			foreach($block->getRules() as $rule) {
-				$rules[$rule->getRule()] = $this->getActualRuleValue($rule->getValue());
-			}
-			$this->contents[] = array(
-				'selectors' => $selectors,
-				//'relevantItems' => $relevantItems,
-				'rules' => $rules
-			);
 		}
 	}
 
-	function getActualRuleValue($ruleValue) {
+	function getAtRuleSet($atRuleSet) {
+		$rules = array();
+
+		foreach($atRuleSet->getRules() as $rule) {
+			$rules[$rule->getRule()] = $this->getRuleValue($rule->getValue());
+		}
+
+		return array(
+			'selectors' => array(
+				'@' . $atRuleSet->atRuleName()
+			),
+			'rules' => $rules
+		);
+	}
+
+	function getDeclarationBlock($declarationBlock, $mediaQuery = false) {
+		$selectors = array();
+		$rules = array();
+		foreach($declarationBlock->getSelectors() as $selector) {
+			$thisSelector = $selector->getSelector();
+			$selectors[] = $thisSelector;
+		}
+		foreach($declarationBlock->getRules() as $rule) {
+			$rules[$rule->getRule()] = $this->getRuleValue($rule->getValue());
+		}
+		return array(
+			'selectors' => $selectors,
+			'mediaQuery' => $mediaQuery,
+			'rules' => $rules
+		);
+	}
+
+	function getAtRuleBlockList($atRuleBlockList) {
+		$mediaQuery = '@' . $atRuleBlockList->atRuleName() . ' ' . $atRuleBlockList->atRuleArgs();
+		$declarationBlocks = array();
+
+		foreach($atRuleBlockList->getContents() as $declarationBlock) {
+			$declarationBlocks[] = $this->getDeclarationBlock($declarationBlock, $mediaQuery);
+		}
+
+		return $declarationBlocks;
+	}
+
+	function getRuleValue($ruleValue) {
 		if (is_object($ruleValue)) {
 			switch(get_class($ruleValue)) {
 				case "Sabberworm\CSS\Value\RuleValueList":
@@ -79,7 +115,7 @@ class UXI_Parsed_CSS {
 	function getRuleValueList($ruleValueList) {
 		$components = array();
 		foreach($ruleValueList->getListComponents() as $component) {
-			$components[] = $this->getActualRuleValue($component);
+			$components[] = $this->getRuleValue($component);
 		}
 		return $components;
 	}
@@ -108,7 +144,7 @@ class UXI_Parsed_CSS {
 		$arguments = array();
 
 		foreach($cssFunction->getArguments() as $argument) {
-			$arguments[] = $this->getActualRuleValue($argument);
+			$arguments[] = $this->getRuleValue($argument);
 		}
 
 		return array(

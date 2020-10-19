@@ -2,6 +2,7 @@
 
 define('UXI_FILES_DIR', trailingslashit(WP_CONTENT_DIR) . 'uploads/uxi-files');
 define('UXI_FILES_URL', trailingslashit(WP_CONTENT_URL) . 'uploads/uxi-files');
+define('UXI_FILES_DEBUG_DIR', trailingslashit(UXI_FILES_DIR) . 'debug');
 
 final class UXI_Files_Handler {
 
@@ -37,6 +38,26 @@ final class UXI_Files_Handler {
 			return unlink($filename);
 		}
 		return true;
+	}
+
+	public static function debug_log($contents, $filename) {
+		@mkdir(UXI_FILES_DEBUG_DIR, 0777, true);
+
+		$location = trailingslashit(UXI_FILES_DEBUG_DIR);
+		$filepath = $location . $filename;
+
+		file_put_contents($filepath, $contents);
+	}
+
+	public static function var_dump($contents, $filename) {
+		@mkdir(UXI_FILES_DEBUG_DIR, 0777, true);
+
+		$location = trailingslashit(UXI_FILES_DEBUG_DIR);
+		$filepath = $location . $filename;
+
+		ob_start();
+		var_dump($contents);
+		file_put_contents($filepath, ob_get_clean());
 	}
 
 }
