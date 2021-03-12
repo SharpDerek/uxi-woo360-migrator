@@ -156,8 +156,84 @@ final class UXI_Common {
 
 	public static function media_url_replace($url) {
 		$new_url = preg_replace('/.+?(?=\/\d+\/\d+)/', untrailingslashit(wp_upload_dir()['baseurl']), $url);
-		//var_dump($url, $new_url);
 		return $new_url;
+	}
+
+	public static function get_attachment_id_by_url($origin_url) {
+		$attachment_id = 0;
+
+		// First, see if an image created with this function already exists
+		$args = array(
+			'post_type' => 'attachment',
+			'post_status' => 'inherit',
+			'meta_query' => array(
+				array(
+					'key' => 'origin_url',
+					'value' => $origin_url
+				)
+			)
+		);
+		$attachment_query = new WP_Query($args);
+		while($attachment_query->have_posts()) {
+			$attachment_query->the_post();
+			$attachment_id = get_the_ID();
+			break;
+		}
+		wp_reset_postdata();
+
+		// If we found an image, return its ID
+		if ($attachment_id) {
+			return $attachment_id;
+		}
+
+		$filename = basename($origin_url);
+		$file_url = $origin_url;
+		$filepath = str_replace(
+			trailingslashit(get_site_url()),
+			trailingslashit(get_home_path()),
+			$origin_url
+		);
+
+		require_once( ABSPATH . 'wp-admin/includes/image.php' );
+
+		// Second, if the URL doesn't already belong to the site, upload the image to the uploads folder
+		if (strpos($origin_url, get_site_url()) < 0) {
+			$upload_dir = wp_upload_dir();
+			$filepath = trailingslashit($upload_dir['path']) . $filename;
+			$file_url = trailingslashit($upload_dir['url']) . $filename;
+			$contents = file_get_contents($origin_url);
+			$file = file_put_contents($filepath, $contents);
+		}
+
+		$filetype = wp_check_filetype($filename, null);
+		$attachment_args = array(
+			'post_mime_type' => $filetype['type'],
+			'post_title' => $filename,
+			'post_content' => '',
+			'post_status' => 'inherit'
+		);
+
+		$attachment_id = wp_insert_attachment($attachment_args, $filepath);
+		$metadata = wp_generate_attachment_metadata($attachment_id, $filepath);
+		wp_update_attachment_metadata($attachment_id, $metadata);
+		update_post_meta($attachment_id, 'origin_url', $origin_url);
+		return $attachment_id;
+	}
+
+	public static function toPx($type, $value) {
+		$base_font_size = 16;
+		switch($type) {
+			case 'em':
+				$value *= $base_font_size;
+				break;
+		}
+		return $value;
+	}
+
+	public static function class_split($class_string) {
+		$class_string = preg_replace('/\s+/', ' .', $class_string);
+
+		return explode(' ', $class_string);
 	}
 
 }

@@ -36,13 +36,15 @@ class UXI_Element_Styles {
 			$ruleset_relevant = false;
 			foreach($ruleset['selectors'] as $selector) {
 				if ($id) {
-					if (preg_match($this->regex($id), $selector) === 1) {
+					//if (preg_match($this->regex($id), $selector) === 1) {
+					if ($this->ends_with($selector, $id)) {
 						$ruleset_relevant = true;
 						break;
 					}
 				}
 				foreach($classes as $class) {
-					if (preg_match($this->regex($class), $selector) === 1) {
+					//if (preg_match($this->regex($class), $selector) === 1) {
+					if ($this->ends_with($selector, $class)) {
 						$ruleset_relevant = true;
 						break;
 					}
@@ -65,5 +67,13 @@ class UXI_Element_Styles {
 
 	function regex($input) {
 		return sprintf('/(\%s)([\s]|$)/', $input);
+	}
+
+	function ends_with($haystack, $needle) {
+		$length = strlen($needle);
+		if (!$length) {
+			return true;
+		}
+		return substr($haystack, -$length) == $needle;
 	}
 }

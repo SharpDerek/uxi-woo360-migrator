@@ -51,7 +51,8 @@
 			}
 
 			$stylesheets = array(
-				'uxi-site-custom-css'
+				'uxi-site-custom-css',
+				'uxi-site-css'
 			);
 
 			$migration_settings = array(

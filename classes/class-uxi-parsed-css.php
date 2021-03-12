@@ -1,5 +1,7 @@
 <?php
 
+require_once(plugin_dir_path(__FILE__) . 'class-uxi-common.php');
+
 class UXI_Parsed_CSS {
 
 	public $contents = array();
@@ -8,21 +10,25 @@ class UXI_Parsed_CSS {
 		$cssParser = new Sabberworm\CSS\Parser($css);
 		$parsed_css = $cssParser->parse();
 
-		//var_dump($parsed_css);
+		$this->contents = $this->getContents($parsed_css);
+	}
 
-		foreach($parsed_css->getContents() as $contents) {
+	function getContents($input, $mediaQuery = false) {
+		$return_contents = array();
+		foreach($input->getContents() as $contents) {
 			switch(get_class($contents)) {
 				case 'Sabberworm\CSS\RuleSet\AtRuleSet':
-					$this->contents[] = $this->getAtRuleSet($contents);
+					$return_contents[] = $this->getAtRuleSet($contents);
 					break;
 				case 'Sabberworm\CSS\RuleSet\DeclarationBlock':
-					$this->contents[] = $this->getDeclarationBlock($contents);
+					$return_contents[] = $this->getDeclarationBlock($contents, $mediaQuery);
 					break;
 				case 'Sabberworm\CSS\CSSList\AtRuleBlockList':
-					$this->contents = array_merge($this->contents, $this->getAtRuleBlockList($contents));
+					$return_contents = array_merge($return_contents, $this->getAtRuleBlockList($contents));
 					break;
 			}
 		}
+		return $return_contents;
 	}
 
 	function getAtRuleSet($atRuleSet) {
@@ -43,9 +49,18 @@ class UXI_Parsed_CSS {
 	function getDeclarationBlock($declarationBlock, $mediaQuery = false) {
 		$selectors = array();
 		$rules = array();
+
 		foreach($declarationBlock->getSelectors() as $selector) {
 			$thisSelector = $selector->getSelector();
 			$selectors[] = $thisSelector;
+			if ($thisSelector == 'html' && !$mediaQuery) {
+				foreach($declarationBlock->getRules() as $rule) {
+					if ($rule->getRule() == 'font-size') {
+						$this->base_font_size = $this->getRuleValue($rule->getValue())['value']['size'];
+						break;
+					}
+				}
+			}
 		}
 		foreach($declarationBlock->getRules() as $rule) {
 			$rules[$rule->getRule()] = $this->getRuleValue($rule->getValue());
@@ -59,11 +74,10 @@ class UXI_Parsed_CSS {
 
 	function getAtRuleBlockList($atRuleBlockList) {
 		$mediaQuery = '@' . $atRuleBlockList->atRuleName() . ' ' . $atRuleBlockList->atRuleArgs();
+		$mediaQuery = $this->convert_media_query_to_pixels($mediaQuery);
 		$declarationBlocks = array();
 
-		foreach($atRuleBlockList->getContents() as $declarationBlock) {
-			$declarationBlocks[] = $this->getDeclarationBlock($declarationBlock, $mediaQuery);
-		}
+		$declarationBlocks = $this->getContents($atRuleBlockList, $mediaQuery);
 
 		return $declarationBlocks;
 	}
@@ -159,5 +173,20 @@ class UXI_Parsed_CSS {
 
 	function getCSSString($cssString) {
 		return $cssString->getString();
+	}
+
+	function convert_media_query_to_pixels($media_query) {
+		$value_regex = '/([\d\.]+)(\w+)/';
+
+		return preg_replace_callback(
+			$value_regex,
+			function($matches) {
+				array_shift($matches);
+				$matches[0] = UXI_Common::toPx($matches[1], $matches[0]);
+				$matches[1] = 'px';
+				return implode("", $matches);
+			},
+			$media_query
+		);
 	}
 }

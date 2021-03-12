@@ -19,7 +19,7 @@ function uxi_get_stylesheet(WP_REST_Request $request){
 	@$dom->loadHTML($main_html);
 
 	$stylesheet_query = new UXI_Parse_Query(
-		'//*[@id="uxi-site-custom-css"]/@href',
+		'//*[@id="' . $id . '"]/@href',
 		function($href) {
 			return $href->value;
 		},

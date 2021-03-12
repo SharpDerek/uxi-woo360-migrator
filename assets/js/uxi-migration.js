@@ -114,8 +114,9 @@
 				);
 				updateProgressLog(updateFunction(response));
 			})
-			.fail(function() {
-				updateProgressLog(skipStep());
+			.fail(function(response) {
+				console.error(response);
+				updateProgressLog(showError(response.responseText));
 				hitEndpoint(stepNumber, ++itemNumber);
 			});
 		} else {
@@ -164,6 +165,11 @@
 
 	function skipStep() {
 		return '<p>Something went wrong. Skipping...</p>';
+	}
+
+	function showError(error) {
+		return '<p>Something went wrong:</p>' +
+			'<pre>' + error + '</pre>';
 	}
 
 	function updateProgress(curstep, totalsteps, type, curvalue, maxvalue) {

@@ -1,6 +1,8 @@
 <?php
 require_once(plugin_dir_path(__FILE__) . 'class-uxi-files-handler.php');
 require_once(plugin_dir_path(__FILE__) . 'class-uxi-common.php');
+require_once(plugin_dir_path(__FILE__) . 'class-uxi-module.php');
+require_once(plugin_dir_path(__FILE__) . 'class-uxi-style-map.php');
 
 class UXI_Woo360_Layout {
 
@@ -63,7 +65,10 @@ class UXI_Woo360_Layout {
 				case 'widget':
 				case 'widget_nested':
 					$parent_node = $element_node_ids[$parent_id]->node;
-					$element_node_ids[$element_id] = $this->add_widget_node($element, $parent_node);
+					$widgets = $this->add_widget_node($element, $parent_node);
+					foreach($widgets as $index => $widget) {
+						$element_node_ids[$element_id . '_' . $index] = $widget;
+					}
 					break;
 			}
 		}
@@ -76,10 +81,146 @@ class UXI_Woo360_Layout {
 			$node = $element_node_ids[$element_id];
 			switch($element['element_type']) {
 				case 'row':
+					$class = implode(' ', $element['atts']['class']);
+
+					$settings = array(
+						'class' => $class,
+						'width' => 'full',
+						'bg_size' => 'auto',
+					);
+
+					$row_bg_color_schema = array(
+						'bg_type' => array(
+							'rule' => 'background-color',
+							'value_if_exists' => 'color'
+						),
+						'bg_color' => array(
+							'rule' => 'background-color',
+						)
+					);
+
+					$row_bg_image_schema = array(
+						'bg_type' => array(
+							'rule' => 'background-image',
+							'value_if_exists' => 'photo' 
+						),
+						'bg_image' => array(
+							'rule' => 'background-image',
+							'att' => 'id',
+							'range' => UXI_Style_Map::$mq_large,
+						),
+						'bg_image_src' => array(
+							'rule' => 'background-image',
+							'att' => 'url',
+							'range' => UXI_Style_Map::$mq_large,
+							'dep' => 'bg_image'
+						),
+						'bg_repeat' => array(
+							'rule' => 'background-repeat',
+							'range' => UXI_Style_Map::$mq_large,
+							'dep' => 'bg_image'
+						),
+						'bg_position' => array(
+							'rule' => 'background-position',
+							'att' => 'concat',
+							'range' => UXI_Style_Map::$mq_large,
+							'dep' => 'bg_image'
+						),
+						'bg_attachment' => array(
+							'rule' => 'background-attachment',
+							'range' => UXI_Style_Map::$mq_large,
+							'dep' => 'bg_image'
+						),
+						'bg_size' => array(
+							'rule' => 'background-size',
+							'range' => UXI_Style_Map::$mq_large,
+							'dep' => 'bg_image'
+						),
+						'bg_image_medium' => array(
+							'rule' => 'background-image',
+							'att' => 'id',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_image')
+						),
+						'bg_image_medium_src' => array(
+							'rule' => 'background-image',
+							'att' => 'url',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_image_src'),
+							'dep' => 'bg_image_medium'
+						),
+						'bg_repeat_medium' => array(
+							'rule' => 'background-repeat',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_repeat')
+						),
+						'bg_position_medium' => array(
+							'rule' => 'background-position',
+							'att' => 'concat',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_position')
+						),
+						'bg_attachment_medium' => array(
+							'rule' => 'background-attachment',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_attachment')
+						),
+						'bg_size_medium' => array(
+							'rule' => 'background-size',
+							'range' => UXI_Style_Map::$mq_medium,
+							'compare' => array('bg_size')
+						),
+						'bg_image_responsive' => array(
+							'rule' => 'background-image',
+							'att' => 'id',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_image', 'bg_image_medium'),
+						),
+						'bg_image_responsive_src' => array(
+							'rule' => 'background-image',
+							'att' => 'url',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_image_src', 'bg_image_medium_src'),
+							'dep' => 'bg_image_responsive'
+						),
+						'bg_repeat_responsive' => array(
+							'rule' => 'background-repeat',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_repeat', 'bg_repeat_medium')
+						),
+						'bg_position_responsive' => array(
+							'rule' => 'background-position',
+							'att' => 'concat',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_position', 'bg_position_medium')
+						),
+						'bg_attachment_responsive' => array(
+							'rule' => 'background-attachment',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_attachment', 'bg_attachment_medium')
+						),
+						'bg_size_medium' => array(
+							'rule' => 'background-size',
+							'range' => UXI_Style_Map::$mq_small,
+							'compare' => array('bg_size', 'bg_size_medium')
+						),
+					);
+
+
+					$row_bg_color_map = new UXI_Style_Map($element['styles'], $row_bg_color_schema);
+
+					$row_bg_image_map = new UXI_Style_Map($element['styles'], $row_bg_image_schema);
+
+					$row_bg_color_settings = $row_bg_color_map->map;
+					$row_bg_image_settings = $row_bg_image_map->map;
+
+					$settings = array_merge($settings, $row_bg_color_settings, $row_bg_image_settings);
+
 					$row_node = $element_node_ids[$element_id . '_row'];
-					FLBuilderModel::save_settings($row_node->node, array(
-						'class' => implode(' ', $element['atts']['class'])
-					));
+					FLBuilderModel::save_settings(
+						$row_node->node,
+						$settings
+					);
 				case 'row_nested':
 					break;
 				case 'column':
@@ -132,7 +273,8 @@ class UXI_Woo360_Layout {
 			// case 'uxi_company_address':
 			default:
 			case 'uxi_widget_embed':
-				$widget_module = $this->add_html_module($element, $parent_node);
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-html.php');
+				$widget_module = new UXI_Module_HTML($element, $parent_node);
 				break;
 			// case 'uxi_widget_testimonials':
 			// case 'uxi_widget_social_2':
@@ -142,12 +284,14 @@ class UXI_Woo360_Layout {
 			// case 'uxi_widget_breadcrumbs':
 			case 'uxi_gform':
 			case 'uxi_widget_wysiwyg_text_area':
-				$widget_module = $this->add_rich_text_module($element, $parent_node);
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-richtext.php');
+				$widget_module = new UXI_Module_RichText($element, $parent_node);
 				break;
 			// case 'uxi_widget_copyright':
 			// case 'uxi_widget_logo':
 			case 'widget_uxi_image':
-				$widget_module = $this->add_image_module($element, $parent_node);
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-image.php');
+				$widget_module = new UXI_Module_Image($element, $parent_node);
 				break;
 			// case 'widget_uxi_gallery':
 			// case 'wigdet_uxi_slideshow':
@@ -155,63 +299,77 @@ class UXI_Woo360_Layout {
 			// case 'uxi_widget_lightbox2':
 		}
 
-		return $widget_module;
+		return $widget_module->modules;
 	}
 
-	function additional_settings($widget_module) {
-		$widget_settings = array();
-		FLBuilderModel::save_settings($widget_module->node, $widget_settings);
+	// function get_background_settings($styles) {
+	// 	$bg_image = $styles->get_style('background-image');
+	// 	$bg_color = $styles->get_style('background-color');
 
-		return $widget_module;
-	}
+	// 	$settings = array();
 
-	function add_html_module($element, $parent_node) {
-		$widget_settings = array(
-			'html' => UXI_Common::filter_html($element['html'])
-			//'html' => $element['html']
- 		);
+	// 	if ($bg_image) {
+	// 		$settings['bg_type'] = 'photo';
 
- 		$html_module = FLBuilderModel::add_module('html', (object)$widget_settings, $parent_node);
+	// 		$large = 1500;
+	// 		$medium = 991;
+	// 		$small = 767;
 
- 		return $this->additional_settings($html_module);
-	}
+	// 		$bg_large = $styles->get_style('background-image', $large);
+	// 		$bg_large_data = $this->get_bg_data($bg_large);
 
-	function add_rich_text_module($element, $parent_node) {
-		$widget_settings = array(
-			'text' => UXI_Common::filter_html($element['html'])
-			//'text' => $element['html']
- 		);
+	// 		$bg_medium = $styles->get_style('background-image', $medium);
+	// 		$bg_medium_data = $this->get_bg_data($bg_medium);
 
- 		$rich_text_module = FLBuilderModel::add_module('rich-text', (object)$widget_settings, $parent_node);
+	// 		$bg_small = $styles->get_style('background-image', $small);
+	// 		$bg_small_data = $this->get_bg_data($bg_small);
 
- 		return $this->additional_settings($rich_text_module);
-	}
+	// 		if ($bg_large_data) {
+	// 			$settings['bg_image'] = $bg_large_data['id'];
+	// 			$settings['bg_image_src'] = $bg_large_data['url'];
 
-	function add_image_module($element, $parent_node) {
-		$html = $element['html'];
+	// 			$attach = $styles->get_style('background-attachment', $large);
+	// 			$position = $styles->get_style('background-position', $large);
+	// 			$repeat = $styles->get_style('background-repeat', $large);
+	// 		}
+	// 		if ($bg_medium_data) {
+	// 			if ($bg_medium_data['id'] !== $bg_large_data['id']) {
+	// 				$settings['bg_image_medium'] = $bg_large_data['id'];
+	// 				$settings['bg_image_medium_src'] = $bg_large_data['url'];
 
+	// 				$attach = $styles->get_style('background-attachment', $medium, true);
+	// 				$position = $styles->get_style('background-position', $medium, true);
+	// 				$repeat = $styles->get_style('background-repeat', $medium, true);
+	// 			}
+	// 		}
+	// 		if ($bg_small_data) {
+	// 			if ($bg_small_data['id'] !== $bg_large_data['id'] && $bg_small_data['id'] !== $bg_medium_data['id']) {
+	// 				$settings['bg_image_responsive'] = $bg_large_data['id'];
+	// 				$settings['bg_image_responsive_src'] = $bg_large_data['url'];
 
-		$dom = new DOMDocument();
-		$encoded_html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
-		@$dom->loadHTML($encoded_html);
+	// 				$attach = $styles->get_style('background-attachment', $small, true);
+	// 				$position = $styles->get_style('background-position', $small, true);
+	// 				$repeat = $styles->get_style('background-repeat', $small, true);
+	// 			}
+	// 		}
+	// 	} else if ($bg_color) {
+	// 		$settings['bg_type'] = 'color';
+	// 		$settings['bg_color'] = UXI_Common::color_format($bg_color[0]['value']);
+	// 	}
 
-		$xpath = new DOMXPath($dom);
-		$image_query = '//img';
-		$image_src = "";
+	// 	return $settings;
+	// }
 
-		foreach($xpath->query($image_query) as $image) {
-			$src = $image->getAttribute('src');
-			$image_src = UXI_Common::media_url_replace($src);
-			break;
-		}
-
-		$attachment_id = attachment_url_to_postid($image_src);
-
-		$widget_settings = array(
-			'html' => "Attachment ID: {$attachment_id}. Image Src: {$image_src}"
-		);
-		$image_module = FLBuilderModel::add_module('html', (object)$widget_settings, $parent_node);
-
-		return $this->additional_settings($image_module);
-	}
+	// function get_bg_data($bg) {
+	// 	$data = array(
+	// 		'id' => '',
+	// 		'url' => ''
+	// 	);
+	// 	if ($bg) {
+	// 		$bg = $bg[0];
+	// 		$data['url'] = UXI_Common::media_url_replace($bg['value']);
+	// 		$$data['id'] = UXI_Common::get_attachment_id_by_url($bg_url);
+	// 	}
+	// 	return $data;
+	// }
 }
