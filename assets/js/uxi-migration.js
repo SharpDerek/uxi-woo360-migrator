@@ -214,7 +214,7 @@
 
 			let debug = false;
 
-			debug = true;
+			//debug = true;
 
 			if (debug) {
 				hitEndpoint(8, 0);
