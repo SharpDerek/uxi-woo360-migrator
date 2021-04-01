@@ -1,5 +1,7 @@
 <?php
 
+require_once(plugin_dir_path(__FILE__) . 'class-uxi-common.php');
+
 class UXI_Parsed_CSS {
 
 	public $contents = array();
@@ -8,31 +10,79 @@ class UXI_Parsed_CSS {
 		$cssParser = new Sabberworm\CSS\Parser($css);
 		$parsed_css = $cssParser->parse();
 
-		foreach($parsed_css->getAllDeclarationBlocks() as $block) {
-			$selectors = array();
-			//$relevantItems = array();
-			$rules = array();
-			foreach($block->getSelectors() as $selector) {
-				$thisSelector = $selector->getSelector();
-				$selectors[] = $thisSelector;
-				// foreach(explode(" ", $thisSelector) as $item) {
-				// 	if (!in_array($item, $relevantItems)) {
-				// 		$relevantItems[] = $item;
-				// 	}
-				// }
-			}
-			foreach($block->getRules() as $rule) {
-				$rules[$rule->getRule()] = $this->getActualRuleValue($rule->getValue());
-			}
-			$this->contents[] = array(
-				'selectors' => $selectors,
-				//'relevantItems' => $relevantItems,
-				'rules' => $rules
-			);
-		}
+		$this->contents = $this->getContents($parsed_css);
 	}
 
-	function getActualRuleValue($ruleValue) {
+	function getContents($input, $mediaQuery = false) {
+		$return_contents = array();
+		foreach($input->getContents() as $contents) {
+			switch(get_class($contents)) {
+				case 'Sabberworm\CSS\RuleSet\AtRuleSet':
+					$return_contents[] = $this->getAtRuleSet($contents);
+					break;
+				case 'Sabberworm\CSS\RuleSet\DeclarationBlock':
+					$return_contents[] = $this->getDeclarationBlock($contents, $mediaQuery);
+					break;
+				case 'Sabberworm\CSS\CSSList\AtRuleBlockList':
+					$return_contents = array_merge($return_contents, $this->getAtRuleBlockList($contents));
+					break;
+			}
+		}
+		return $return_contents;
+	}
+
+	function getAtRuleSet($atRuleSet) {
+		$rules = array();
+
+		foreach($atRuleSet->getRules() as $rule) {
+			$rules[$rule->getRule()] = $this->getRuleValue($rule->getValue());
+		}
+
+		return array(
+			'selectors' => array(
+				'@' . $atRuleSet->atRuleName()
+			),
+			'rules' => $rules
+		);
+	}
+
+	function getDeclarationBlock($declarationBlock, $mediaQuery = false) {
+		$selectors = array();
+		$rules = array();
+
+		foreach($declarationBlock->getSelectors() as $selector) {
+			$thisSelector = $selector->getSelector();
+			$selectors[] = $thisSelector;
+			if ($thisSelector == 'html' && !$mediaQuery) {
+				foreach($declarationBlock->getRules() as $rule) {
+					if ($rule->getRule() == 'font-size') {
+						$this->base_font_size = $this->getRuleValue($rule->getValue())['value']['size'];
+						break;
+					}
+				}
+			}
+		}
+		foreach($declarationBlock->getRules() as $rule) {
+			$rules[$rule->getRule()] = $this->getRuleValue($rule->getValue());
+		}
+		return array(
+			'selectors' => $selectors,
+			'mediaQuery' => $mediaQuery,
+			'rules' => $rules
+		);
+	}
+
+	function getAtRuleBlockList($atRuleBlockList) {
+		$mediaQuery = '@' . $atRuleBlockList->atRuleName() . ' ' . $atRuleBlockList->atRuleArgs();
+		$mediaQuery = $this->convert_media_query_to_pixels($mediaQuery);
+		$declarationBlocks = array();
+
+		$declarationBlocks = $this->getContents($atRuleBlockList, $mediaQuery);
+
+		return $declarationBlocks;
+	}
+
+	function getRuleValue($ruleValue) {
 		if (is_object($ruleValue)) {
 			switch(get_class($ruleValue)) {
 				case "Sabberworm\CSS\Value\RuleValueList":
@@ -79,7 +129,7 @@ class UXI_Parsed_CSS {
 	function getRuleValueList($ruleValueList) {
 		$components = array();
 		foreach($ruleValueList->getListComponents() as $component) {
-			$components[] = $this->getActualRuleValue($component);
+			$components[] = $this->getRuleValue($component);
 		}
 		return $components;
 	}
@@ -108,7 +158,7 @@ class UXI_Parsed_CSS {
 		$arguments = array();
 
 		foreach($cssFunction->getArguments() as $argument) {
-			$arguments[] = $this->getActualRuleValue($argument);
+			$arguments[] = $this->getRuleValue($argument);
 		}
 
 		return array(
@@ -123,5 +173,20 @@ class UXI_Parsed_CSS {
 
 	function getCSSString($cssString) {
 		return $cssString->getString();
+	}
+
+	function convert_media_query_to_pixels($media_query) {
+		$value_regex = '/([\d\.]+)(\w+)/';
+
+		return preg_replace_callback(
+			$value_regex,
+			function($matches) {
+				array_shift($matches);
+				$matches[0] = UXI_Common::toPx($matches[1], $matches[0]);
+				$matches[1] = 'px';
+				return implode("", $matches);
+			},
+			$media_query
+		);
 	}
 }

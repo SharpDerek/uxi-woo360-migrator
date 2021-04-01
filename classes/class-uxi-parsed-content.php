@@ -2,6 +2,7 @@
 
 require_once(plugin_dir_path(__FILE__) . 'class-uxi-parse-query.php');
 require_once(plugin_dir_path(__FILE__) . 'class-uxi-element.php');
+//require_once(plugin_dir_path(__FILE__) . 'class-uxi-files-handler.php');
 
 class UXI_Parsed_Content {
 
@@ -48,6 +49,7 @@ class UXI_Parsed_Content {
 					$this_element = $this->UXI_Element($query_element);
 
 					$childHTML = $this->childHTML($query_element);
+					//UXI_Files_Handler::debug_log($childHTML, 'column_' . $this_element->id . '.html');
 					$nested_rows = new UXI_Parsed_Content($this->layout_section, 'row_nested', $childHTML, $this->all_content, $this_element->id);
 					$widgets = new UXI_Parsed_Content($this->layout_section, 'widget', $childHTML, $this->all_content, $this_element->id);
 
@@ -66,7 +68,7 @@ class UXI_Parsed_Content {
 				}
 			),
 			'widget' => new UXI_Parse_Query(
-				'./*/*/*[@uxi-widget]',
+				'./*/*/*/*[@uxi-widget]|./*/*/*/*/*[@uxi-widget]',
 				function($query_element) {
 					$this_element = $this->UXI_Element($query_element);
 
@@ -97,7 +99,8 @@ class UXI_Parsed_Content {
 		$this->parent_id = $parent_id;
 
 		$this->dom = new DOMDocument();
-		@$this->dom->loadHTML($html);
+		$encoded_html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
+		@$this->dom->loadHTML($encoded_html);
 
 		$this->content = array_merge($this->all_content, $this->element_queries()[$this->element_type]->run_query($this->dom));
 	}

@@ -27,7 +27,7 @@
 }
 .migration-runner-wrap .migrator-form,
 .migration-runner-wrap .migrator-progress {
-	width:100%;
+	width:50%;
 }
 .migration-runner-wrap .migrator-progress {
 	margin-top:15px;
@@ -120,4 +120,20 @@
     speak: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+#migrator-progress-log h4 {
+	margin-bottom: 0;
+}
+#migrator-progress-log ul {
+	margin-top:5px;
+	padding-left: 20px;
+	list-style-type: disc;
+}
+#migrator-progress-log pre {
+	margin-top:0px;
+	margin-bottom:20px;
+}
+#migrator-progress-log pre br {
+	display:none !important;
 }

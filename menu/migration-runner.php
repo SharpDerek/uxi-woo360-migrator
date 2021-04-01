@@ -51,7 +51,8 @@
 			}
 
 			$stylesheets = array(
-				'uxi-site-custom-css'
+				'uxi-site-custom-css',
+				'uxi-site-css'
 			);
 
 			$migration_settings = array(
@@ -61,7 +62,7 @@
 					'stylesheet' => $stylesheets,
 					'parsed_stylesheet' => $stylesheets,
 				),
-				'nonce' => $nonce
+				'nonce' => $nonce,
 			);
 
 			$post_obj = array();
@@ -90,21 +91,32 @@
 			}
 
 			$extras = array(
-				'archives' => array(),
+				'archives' => array(
+					array(
+						'name' => 'search-results',
+						'slug' => '?s'
+					)
+				),
 				'endpoints' => array(
-					'404'
+					array(
+						'name' => '404-page',
+						'slug' => '404'
+					)
 				)
 			);
 
-			if (in_array('mad360_testimonial', $_POST['migrations'])) {
-				$extras['archives'][] = 'testimonials';
+			if (in_array('mad360_testimonial', $_POST['migrations']['post_types'])) {
+				$extras['archives'][] = array(
+					'name' => 'mad360_testimonial',
+					'slug' => 'testimonials'
+				);
 			}
 
 			foreach($extras as $type => $contents) {
 				foreach($contents as $content_type) {
 					$compile_json[] = array (
 						'post_type' => $type,
-						'post_id' => $content_type
+						'post_id' => $content_type['name']
 					);
 				}
 			}
@@ -113,12 +125,13 @@
 				$migration_settings['post_obj'],
 				$post_obj,
 				$extras,
-				array('compile_json' => $compile_json)
+				array('compile_json' => $compile_json),
+				array('migrate_json' => $compile_json)
 			);
 
-			// if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
-			// 	$migration_settings['do_location_settings'] = true;
-			// }
+			if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
+				$migration_settings['do_location_settings'] = true;
+			}
 
 			ob_start(); ?>
 				<script>

@@ -21,7 +21,7 @@ function uxi_get_post_data(WP_REST_Request $request){
 	$uxi_main_url = trailingslashit($request['uxi_url']);
 	$uxi_post_url = $uxi_main_url . $slug;
 
-	$html = UXI_Common::uxi_curl($uxi_post_url);
+	$html = UXI_Common::uxi_curl($uxi_post_url, 'text/html; charset=UTF-8');
 
 	$parsed_layouts = array();
 
@@ -31,7 +31,7 @@ function uxi_get_post_data(WP_REST_Request $request){
 	}
 
 	$filename = "uxi-{$post_type}-{$post_id}.json";
-	$json = json_encode($parsed_layouts, JSON_PRETTY_PRINT);
+	$json = json_encode($parsed_layouts, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
 	return UXI_Files_Handler::upload_file($json, $filename);
 }

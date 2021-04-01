@@ -47,6 +47,12 @@ function uxi_rest() {
 		'callback' => 'uxi_get_post_data'
 	));
 
+	require(UXI_MIGRATOR_PATH . 'rest/uxi-migrate-json.php');
+	register_rest_route('uxi-migrator', '/uxi-migrate-json', array(
+		'methods' => 'GET',
+		'callback' => 'uxi_migrate_json'
+	));
+
 	require(UXI_MIGRATOR_PATH . 'rest/uxi-compile-json.php');
 	register_rest_route('uxi-migrator', '/uxi-compile-json', array(
 		'methods' => 'GET',

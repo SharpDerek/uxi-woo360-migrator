@@ -5,7 +5,6 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-files-handler.php');
 class UXI_Element_Styles {
 
 	public $rules = array();
-	public $debug_shit = array();
 
 	public function __construct($uxi_element) {
 		$parsed_css = UXI_Files_Handler::get_file('uxi-site-custom-css-parsed.json');
@@ -36,16 +35,16 @@ class UXI_Element_Styles {
 		foreach($parsed_css as $ruleset) {
 			$ruleset_relevant = false;
 			foreach($ruleset['selectors'] as $selector) {
-
-				//$this->debug_shit[] = $this->regex($id);
 				if ($id) {
-					if (preg_match($this->regex($id), $selector) === 1) {
+					//if (preg_match($this->regex($id), $selector) === 1) {
+					if ($this->ends_with($selector, $id)) {
 						$ruleset_relevant = true;
 						break;
 					}
 				}
 				foreach($classes as $class) {
-					if (preg_match($this->regex($class), $selector) === 1) {
+					//if (preg_match($this->regex($class), $selector) === 1) {
+					if ($this->ends_with($selector, $class)) {
 						$ruleset_relevant = true;
 						break;
 					}
@@ -68,5 +67,13 @@ class UXI_Element_Styles {
 
 	function regex($input) {
 		return sprintf('/(\%s)([\s]|$)/', $input);
+	}
+
+	function ends_with($haystack, $needle) {
+		$length = strlen($needle);
+		if (!$length) {
+			return true;
+		}
+		return substr($haystack, -$length) == $needle;
 	}
 }
