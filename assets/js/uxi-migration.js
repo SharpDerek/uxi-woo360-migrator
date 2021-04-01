@@ -115,8 +115,10 @@
 				updateProgressLog(updateFunction(response));
 			})
 			.fail(function(response) {
+				const errorRegex = /<!DOCTYPE[\s\S]+/g;
+				const error = response.responseText.replace(errorRegex, '')
 				console.error(response);
-				updateProgressLog(showError(response.responseText));
+				updateProgressLog(showError(error));
 				hitEndpoint(stepNumber, ++itemNumber);
 			});
 		} else {
@@ -168,7 +170,7 @@
 	}
 
 	function showError(error) {
-		return '<p>Something went wrong:</p>' +
+		return '<p style="margin-bottom:0px;">Something went wrong:</p>' +
 			'<pre>' + error + '</pre>';
 	}
 
@@ -209,8 +211,16 @@
 	$(document).ready(function() {
 		if (typeof migrationSettings !== "undefined") {
 			migrationSettings.completed_posts = [];
-			//hitEndpoint(0, 0);
-			hitEndpoint(8, 0);
+
+			let debug = false;
+
+			debug = true;
+
+			if (debug) {
+				hitEndpoint(8, 0);
+			} else {
+				hitEndpoint(0, 0);
+			}
 		}
 		doAccordion();
 	});

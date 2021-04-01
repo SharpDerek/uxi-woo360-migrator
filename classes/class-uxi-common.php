@@ -64,7 +64,6 @@ final class UXI_Common {
 	}
 
 	public static function get_global_post($global_type) {
-
 		switch($global_type) {
 			case 'header':
 			case 'singular':
@@ -93,17 +92,20 @@ final class UXI_Common {
 		return 0;
 	}
 
+	public static function is_themer($post_id) {
+		return get_post_type($post_id) == 'fl-theme-layout';
+	}
+
 	public static function filter_html($html) {
 		$html = self::replace_image_urls($html);
 		$html = self::get_gform_shortcode($html);
-
 		return $html;
 	}
 
 	public static function get_gform_shortcode($html) {
 		$dom = new DOMDocument();
 		$encoded_html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
-		@$dom->loadHTML($encoded_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+		@$dom->loadHTML($encoded_html, LIBXML_HTML_NODEFDTD);
 
 		$xpath = new DOMXPath($dom);
 		$form_query = '//*[contains(@id, "gform_wrapper_")]';
@@ -113,50 +115,77 @@ final class UXI_Common {
 		//*[contains(@id, "gform_wrapper_")]/following-sibling::script[contains(text(),"gform")]
 		';
 
+		if (!$xpath->query($form_query)->length) {
+			return $html;
+		}
+
 		foreach($xpath->query($extra_garbage_query) as $garbage) {
 			$garbage->parentNode->removeChild($garbage);
 		}
 
 		foreach($xpath->query($form_query) as $form_wrapper) {
-			$form_html = $dom->saveHTML($form_wrapper);
-
-			$form_dom = new DOMDocument();
-			@$form_dom->loadHTML($form_html);
-			$form_xpath = new DOMXPath($form_dom);
-
 			$form_id = str_replace('gform_wrapper_', '', $form_wrapper->getAttribute('id'));
-			$has_title			= (!!$xpath->query('//*[contains(@class, "gform_title")]')		 ->length) ? 'true' : 'false';
-			$has_description	= (!!$xpath->query('//*[contains(@class, "gform_description")]') ->length) ? 'true' : 'false';
-			$is_ajax			= (!!$xpath->query('//form[contains(@target, "gform_ajax_")]')	 ->length) ? 'true' : 'false';
+
+			$title_query = './/*[contains(@class, "gform_title")]';
+			$description_query = './/*[contains(@class, "gform_description")]';
+			$ajax_query = './/form[contains(@target, "gform_ajax_")]';
+
+			$has_title = ($xpath->query($title_query, $form_wrapper)->length)
+			? 'true'
+			: 'false';
+
+			$has_description = ($xpath->query($description_query, $form_wrapper)->length)
+			? 'true' :
+			'false';
+
+			$is_ajax = ($xpath->query($ajax_query, $form_wrapper)->length)
+			? 'true'
+			: 'false';
 
 			$shortcode = $dom->createElement('p', "[gravityform id={$form_id} title={$has_title} description={$has_description} ajax={$is_ajax}]");
 
 			$form_wrapper->parentNode->replaceChild($shortcode, $form_wrapper);
 		}
-		
 
-		return $dom->saveHTML();
+		$new_html = $dom->saveHTML();
+
+		$new_html = trim(
+			preg_replace(
+				'/[\s\S]+\<body\>|<\/body>[\s\S]+/',
+				'',
+				$new_html
+			)
+		);
+
+		return $new_html;
 	}
 
 	public static function replace_image_urls($html) {
-		$dom = new DOMDocument();
-		$encoded_html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
-		@$dom->loadHTML($encoded_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-		$xpath = new DOMXPath($dom);
-		$image_query = '//img';
-
-		foreach($xpath->query($image_query) as $image_element) {
-			$img_src = $image_element->getAttribute('src');
-			$new_img_src = self::media_url_replace($img_src);
-			$image_element->setAttribute('src', $new_img_src);
-		}
-		return $dom->saveHTML();
+		return preg_replace(
+			'/(?<=src=").+?(?=\/\d+\/\d+\/)/',
+			untrailingslashit(wp_upload_dir()['baseurl']),
+			$html
+		);
 	}
 
 	public static function media_url_replace($url) {
-		$new_url = preg_replace('/.+?(?=\/\d+\/\d+)/', untrailingslashit(wp_upload_dir()['baseurl']), $url);
+		$new_url = preg_replace('/.+?(?=\/\d+\/\d+\/)/', untrailingslashit(wp_upload_dir()['baseurl']), $url);
 		return $new_url;
+	}
+
+	public static function uxi_urls() {
+		$url = trailingslashit(self::$uxi_url);
+		return array(
+			'https://www.' . $url,
+			'http://www.' . $url,
+			'https://' . $url,
+			'http://' . $url,
+			$url
+		);
+	}
+
+	public static function url_replace($url) {
+		return str_replace(self::uxi_urls(), trailingslashit(site_url()), $url);
 	}
 
 	public static function get_attachment_id_by_url($origin_url) {
@@ -234,6 +263,24 @@ final class UXI_Common {
 		$class_string = preg_replace('/\s+/', ' .', $class_string);
 
 		return explode(' ', $class_string);
+	}
+
+	public static function class_concat($class_array) {
+		if (!$class_array) {
+			return '';
+		}
+		return trim(implode(" ", $class_array));
+	}
+
+	public static function icon_name($name) {
+		$icon_name = str_replace('icon-uxis', 'uxi-icon', $name);
+		return $icon_name;
+	}
+
+	public static function replace_date_with_shortcode($content) {
+		$year = date("Y");
+
+		return str_replace($year, '[fl_year]', $content);
 	}
 
 }

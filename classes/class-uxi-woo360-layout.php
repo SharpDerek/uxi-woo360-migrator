@@ -7,21 +7,23 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-style-map.php');
 class UXI_Woo360_Layout {
 
 	public $style;
+	public $post_id;
 
 	public function __construct($post_id, $uxi_layout_styling) {
+		$this->post_id = $post_id;
 		if ($uxi_layout_styling) {
-			$this->build_post_nodes($post_id, $uxi_layout_styling);
+			$this->build_post_nodes($uxi_layout_styling);
 		}
 		$this->style = array(
-			'url' => get_permalink($post_id),
-			'title' => get_the_title($post_id)
+			'url' => get_permalink($this->post_id),
+			'title' => get_the_title($this->post_id)
 		);
 	}
 
-	function build_post_nodes($post_id, $uxi_layout_styling) {
-		FLBuilderModel::set_post_id($post_id);
+	function build_post_nodes($uxi_layout_styling) {
+		FLBuilderModel::set_post_id($this->post_id);
 		FLBuilderModel::enable();
-		FLBuilderModel::delete_post($post_id);
+		FLBuilderModel::delete_post($this->post_id);
 		$element_node_ids = array();
 		$auto_col = null;
 		foreach($uxi_layout_styling as $element_id => $element) {
@@ -259,117 +261,106 @@ class UXI_Woo360_Layout {
 		$widget_module = null;
 
 		switch($widget_type) {
-			// case 'uxi_widget_recent_posts':
-			// case 'uxi_widget_archives':
-			// case 'widget_categories':
-			// case 'uxi_loop':
-			// case 'uxi_loop_header':
-			// case 'uxi_widget_cta2':
-			// case 'uxi_jumbotron2':
-			// case 'uxi_widget_button':
-			// case 'widget_uxi_navigation':
-			// case 'widget_uxi_custom_menu':
-			// case 'uxi_google_map':
-			// case 'uxi_company_address':
+			case 'uxi_widget_recent_posts':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-posts.php');
+				$widget_module = new UXI_Module_Posts($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_archives':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-archives.php');
+				$widget_module = new UXI_Module_Archives($element, $parent_node, $this->post_id);
+				break;
+			case 'widget_categories':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-categories.php');
+				$widget_module = new UXI_Module_Categories($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_loop':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-loop.php');
+				$widget_module = new UXI_Module_Loop($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_loop_header':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-loop-header.php');
+				$widget_module = new UXI_Module_Loop_Header($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_cta2':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-cta.php');
+				$widget_module = new UXI_Module_CTA($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_jumbotron2':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-jumbotron.php');
+				$widget_module = new UXI_Module_Jumbotron($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_lightbox2':
+			case 'uxi_widget_button':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-button.php');
+				$widget_module = new UXI_Module_Button($element, $parent_node, $this->post_id);
+				break;
+			case 'widget_uxi_navigation':
+			case 'widget_uxi_custom_menu':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-menu.php');
+				$widget_module = new UXI_Module_Menu($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_company_address':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-company-info.php');
+				$widget_module = new UXI_Module_Company_Info($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_google_map':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-google-map.php');
+				$widget_module = new UXI_Module_Google_Map($element, $parent_node, $this->post_id);
+				break;
 			default:
 			case 'uxi_widget_embed':
 				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-html.php');
-				$widget_module = new UXI_Module_HTML($element, $parent_node);
+				$widget_module = new UXI_Module_HTML($element, $parent_node, $this->post_id);
 				break;
-			// case 'uxi_widget_testimonials':
-			// case 'uxi_widget_social_2':
-			// case 'uxi_payment_icons':
-			// case 'uxi_widget_search':
-			// case 'uxi_widget_sitemap':
-			// case 'uxi_widget_breadcrumbs':
+			case 'uxi_widget_testimonials':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-testimonials.php');
+				$widget_module = new UXI_Module_Testimonials($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_social_2':
+			case 'uxi_payment_icons':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-icon-group.php');
+				$widget_module = new UXI_Module_Icon_Group($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_search':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-search-form.php');
+				$widget_module = new UXI_Module_Search_Form($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_sitemap':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-sitemap.php');
+				$widget_module = new UXI_Module_Sitemap($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_breadcrumbs':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-breadcrumbs.php');
+				$widget_module = new UXI_Module_Breadcrumbs($element, $parent_node, $this->post_id);
+				break;
 			case 'uxi_gform':
 			case 'uxi_widget_wysiwyg_text_area':
 				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-richtext.php');
-				$widget_module = new UXI_Module_RichText($element, $parent_node);
+				$widget_module = new UXI_Module_RichText($element, $parent_node, $this->post_id);
 				break;
-			// case 'uxi_widget_copyright':
-			// case 'uxi_widget_logo':
+			case 'uxi_widget_copyright':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-copyright.php');
+				$widget_module = new UXI_Module_Copyright($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_logo':
 			case 'widget_uxi_image':
 				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-image.php');
-				$widget_module = new UXI_Module_Image($element, $parent_node);
+				$widget_module = new UXI_Module_Image($element, $parent_node, $this->post_id);
 				break;
-			// case 'widget_uxi_gallery':
-			// case 'wigdet_uxi_slideshow':
-			// case 'uxi_widget_video':
-			// case 'uxi_widget_lightbox2':
+			case 'widget_uxi_gallery':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-gallery.php');
+				$widget_module = new UXI_Module_Gallery($element, $parent_node, $this->post_id);
+				break;
+			case 'wigdet_uxi_slideshow':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-slideshow.php');
+				$widget_module = new UXI_Module_Slideshow($element, $parent_node, $this->post_id);
+				break;
+			case 'uxi_widget_video':
+				require_once(plugin_dir_path(__FILE__) . 'class-uxi-module-video.php');
+				$widget_module = new UXI_Module_Video($element, $parent_node, $this->post_id);
+				break;
 		}
 
 		return $widget_module->modules;
 	}
-
-	// function get_background_settings($styles) {
-	// 	$bg_image = $styles->get_style('background-image');
-	// 	$bg_color = $styles->get_style('background-color');
-
-	// 	$settings = array();
-
-	// 	if ($bg_image) {
-	// 		$settings['bg_type'] = 'photo';
-
-	// 		$large = 1500;
-	// 		$medium = 991;
-	// 		$small = 767;
-
-	// 		$bg_large = $styles->get_style('background-image', $large);
-	// 		$bg_large_data = $this->get_bg_data($bg_large);
-
-	// 		$bg_medium = $styles->get_style('background-image', $medium);
-	// 		$bg_medium_data = $this->get_bg_data($bg_medium);
-
-	// 		$bg_small = $styles->get_style('background-image', $small);
-	// 		$bg_small_data = $this->get_bg_data($bg_small);
-
-	// 		if ($bg_large_data) {
-	// 			$settings['bg_image'] = $bg_large_data['id'];
-	// 			$settings['bg_image_src'] = $bg_large_data['url'];
-
-	// 			$attach = $styles->get_style('background-attachment', $large);
-	// 			$position = $styles->get_style('background-position', $large);
-	// 			$repeat = $styles->get_style('background-repeat', $large);
-	// 		}
-	// 		if ($bg_medium_data) {
-	// 			if ($bg_medium_data['id'] !== $bg_large_data['id']) {
-	// 				$settings['bg_image_medium'] = $bg_large_data['id'];
-	// 				$settings['bg_image_medium_src'] = $bg_large_data['url'];
-
-	// 				$attach = $styles->get_style('background-attachment', $medium, true);
-	// 				$position = $styles->get_style('background-position', $medium, true);
-	// 				$repeat = $styles->get_style('background-repeat', $medium, true);
-	// 			}
-	// 		}
-	// 		if ($bg_small_data) {
-	// 			if ($bg_small_data['id'] !== $bg_large_data['id'] && $bg_small_data['id'] !== $bg_medium_data['id']) {
-	// 				$settings['bg_image_responsive'] = $bg_large_data['id'];
-	// 				$settings['bg_image_responsive_src'] = $bg_large_data['url'];
-
-	// 				$attach = $styles->get_style('background-attachment', $small, true);
-	// 				$position = $styles->get_style('background-position', $small, true);
-	// 				$repeat = $styles->get_style('background-repeat', $small, true);
-	// 			}
-	// 		}
-	// 	} else if ($bg_color) {
-	// 		$settings['bg_type'] = 'color';
-	// 		$settings['bg_color'] = UXI_Common::color_format($bg_color[0]['value']);
-	// 	}
-
-	// 	return $settings;
-	// }
-
-	// function get_bg_data($bg) {
-	// 	$data = array(
-	// 		'id' => '',
-	// 		'url' => ''
-	// 	);
-	// 	if ($bg) {
-	// 		$bg = $bg[0];
-	// 		$data['url'] = UXI_Common::media_url_replace($bg['value']);
-	// 		$$data['id'] = UXI_Common::get_attachment_id_by_url($bg_url);
-	// 	}
-	// 	return $data;
-	// }
 }

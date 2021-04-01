@@ -1,10 +1,10 @@
 <?php
 
-class UXI_Module_RichText extends UXI_Module {
+class UXI_Module_Copyright extends UXI_Module {
 
 	function build_modules() {
 		$settings = array(
-			'text' => $this->content
+			'text' => UXI_Common::replace_date_with_shortcode($this->content)
 		);
 
 		$this->modules[] = $this->add_module('rich-text', $settings);
