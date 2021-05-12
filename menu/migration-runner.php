@@ -5,19 +5,7 @@
 	   <form method="post" action="<?php menu_page_url('uxi-migration',true); ?>">
 	     <p>
 			<label for="uxi-url">UXi Homepage URL (no subpages)</label>
-	        <input type="text" id="uxi-url" name="uxi-url" class="regular-text" required placeholder="type your URL here">
-	     </p>
-	     <p>
-			<input type="checkbox" id="migrate-pages" name="migrations[post_types][]" value="page" checked>
-			<label for="migrate-pages">Pages</label><br>
-			<input type="checkbox" id="migrate-posts" name="migrations[post_types][]" value="post" checked>
-			<label for="migrate-posts">Posts</label><br>
-			<input type="checkbox" id="migrate-testimonials" name="migrations[post_types][]" value="mad360_testimonial" checked>
-			<label for="migrate-testimonials">Testimonials</label><br>
-			<?php if (class_exists('WP_Store_locator')): ?>
-				<input type="checkbox" id="migrate-locations" name="migrations[post_types][]" value="uxi_locations" checked>
-				<label for="migrate-locations">Locations</label><br>
-			<?php endif; ?>
+	        <input type="text" id="uxi-url" name="uxi-url" class="regular-text" required placeholder="https://uxi-website.com">
 	     </p>
 	     <p>
 	       <input name="start_migration" type="submit" class="button-primary" value="Start Migration"> 
@@ -50,25 +38,36 @@
 			  $nonce = 'none';
 			}
 
+
+			$migration_settings = array(
+				'site_url' => get_site_url(),
+				'uxi_url' => trailingslashit($_POST['uxi-url']),
+				'nonce' => $nonce,
+			);
+
 			$stylesheets = array(
 				'uxi-site-custom-css',
 				'uxi-site-css'
 			);
 
-			$migration_settings = array(
-				'site_url' => get_site_url(),
-				'uxi_url' => trailingslashit($_POST['uxi-url']),
-				'post_obj' => array(
-					'stylesheet' => $stylesheets,
-					'parsed_stylesheet' => $stylesheets,
-				),
-				'nonce' => $nonce,
+			$post_obj = array(
+				'stylesheet' => $stylesheets,
+				'parsed_stylesheet' => $stylesheets,
 			);
 
-			$post_obj = array();
 			$compile_json = array('init');
 
-			foreach($_POST['migrations']['post_types'] as $post_type) {
+			$post_types = array(
+				'page',
+				'post',
+				'mad360_testimonial'
+			);
+
+			if (class_exists('WP_Store_locator')) {
+				$post_types[] = 'uxi_locations';
+			}
+
+			foreach($post_types as $post_type) {
 				$post_query = new WP_Query(
 					array(
 						'post_type' => $post_type,
@@ -95,6 +94,10 @@
 					array(
 						'name' => 'search-results',
 						'slug' => '?s'
+					),
+					array(
+						'name' => 'mad360_testimonial',
+						'slug' => 'testimonials'
 					)
 				),
 				'endpoints' => array(
@@ -105,13 +108,6 @@
 				)
 			);
 
-			if (in_array('mad360_testimonial', $_POST['migrations']['post_types'])) {
-				$extras['archives'][] = array(
-					'name' => 'mad360_testimonial',
-					'slug' => 'testimonials'
-				);
-			}
-
 			foreach($extras as $type => $contents) {
 				foreach($contents as $content_type) {
 					$compile_json[] = array (
@@ -121,17 +117,29 @@
 				}
 			}
 
-			$migration_settings['post_obj'] = array_merge(
-				$migration_settings['post_obj'],
-				$post_obj,
-				$extras,
-				array('compile_json' => $compile_json),
-				array('migrate_json' => $compile_json)
+			$plugins = array(
+				'uxi-resources'
 			);
 
-			if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
-				$migration_settings['do_location_settings'] = true;
-			}
+			$migration_settings['post_obj'] = array_merge(
+				$post_obj,
+				$extras,
+				array(
+					'compile_json' => $compile_json,
+					'migrate_json' => $compile_json,
+					'global_settings' => array(
+						'site_icon',
+						'customizer',
+						'js',
+					),
+					'deposit_plugins' => $plugins,
+					'activate_plugins' => $plugins
+				)
+			);
+
+			// if (class_exists('WP_Store_locator') && in_array("uxi_locations", $_POST['migrations'])) {
+			// 	$migration_settings['do_location_settings'] = true;
+			// }
 
 			ob_start(); ?>
 				<script>

@@ -75,7 +75,6 @@
 					break;
 				case 'archives':
 				case 'endpoints':
-				console.log(postId);
 					ajaxData = {
 						type: "GET",
 						url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-get-post-data",
@@ -99,6 +98,44 @@
 							post_type: step
 						}
 					};
+					break;
+				case 'global_settings':
+					ajaxData = {
+						type: "GET",
+						url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-global-settings",
+						data: {
+							_wpnonce: migrationSettings.nonce,
+							uxi_url: migrationSettings.uxi_url,
+							setting: postId,
+						}
+					};
+					updateFunction = blankUpdate;
+					break;
+				case 'deposit_plugins':
+					ajaxData = {
+						type: "GET",
+						url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-deposit-plugins",
+						data: {
+							_wpnonce: migrationSettings.nonce,
+							uxi_url: migrationSettings.uxi_url,
+							action: 'install',
+							plugin: postId,
+						}
+					};
+					updateFunction = blankUpdate;
+					break;
+				case 'activate_plugins':
+					ajaxData = {
+						type: "GET",
+						url: migrationSettings.site_url + "/wp-json/uxi-migrator/uxi-deposit-plugins",
+						data: {
+							_wpnonce: migrationSettings.nonce,
+							uxi_url: migrationSettings.uxi_url,
+							action: 'activate',
+							plugin: postId,
+						}
+					};
+					updateFunction = blankUpdate;
 					break;
 			}
 
@@ -159,6 +196,12 @@
 		return responseText;
 	}
 
+	function blankUpdate(response) {
+		return `
+			<p><b>${response}</b></p>
+		`;
+	}
+
 	function fileUpdate(response) {
 		return `
 			<p><a href="${response.url}" target="_blank">${response.filename}</a> ${response.status}. (${response.filesize / 1000}KB)</p>
@@ -217,7 +260,7 @@
 			//debug = true;
 
 			if (debug) {
-				hitEndpoint(8, 0);
+				hitEndpoint(10, 0);
 			} else {
 				hitEndpoint(0, 0);
 			}

@@ -33,14 +33,6 @@ function uxi_check_reading_settings() {
 	<ol>
 		<li>
 			<?php echo uxi_migration_check(
-				class_exists('RegenerateThumbnails'),
-				get_dashboard_url(0, 'plugin-install.php?tab=plugin-information&plugin=regenerate-thumbnails'),
-				"Regenerate Thumbnails plugin installed, updated and activated"
-			); ?>
-		</li>
-
-		<li>
-			<?php echo uxi_migration_check(
 				class_exists('WP_Store_locator'),
 				get_dashboard_url(0, 'plugin-install.php?tab=plugin-information&plugin=wp+store+locator'),
 				"(Locations Only) WP Store Locator plugin installed, updated and activated"
@@ -84,14 +76,6 @@ function uxi_check_reading_settings() {
 				uxi_check_reading_settings(),
 				get_dashboard_url(0, 'options-reading.php'),
 				"Home & Blog pages set"
-			); ?>
-		</li>
-
-		<li>
-			<?php echo uxi_migration_check(
-				get_site_icon_url(),
-				get_dashboard_url(0, 'customize.php'),
-				"Favicon set"
 			); ?>
 		</li>
 	</ol>

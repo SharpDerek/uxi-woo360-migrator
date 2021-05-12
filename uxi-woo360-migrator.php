@@ -58,6 +58,18 @@ function uxi_rest() {
 		'methods' => 'GET',
 		'callback' => 'uxi_compile_json'
 	));
+
+	require(UXI_MIGRATOR_PATH . 'rest/uxi-global-settings.php');
+	register_rest_route('uxi-migrator', '/uxi-global-settings', array(
+		'methods' => 'GET',
+		'callback' => 'uxi_global_settings'
+	));
+
+	require(UXI_MIGRATOR_PATH . 'rest/uxi-deposit-plugins.php');
+	register_rest_route('uxi-migrator', '/uxi-deposit-plugins', array(
+		'methods' => 'GET',
+		'callback' => 'uxi_deposit_plugins'
+	));
 }
 add_action('rest_api_init', 'uxi_rest');
 
