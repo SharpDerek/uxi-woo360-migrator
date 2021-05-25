@@ -152,8 +152,6 @@ function uxi_global_settings(WP_REST_Request $request){
 			return "No Global JS to update";
 
 			break;
-		case 'file_cleanup':
-			break;
 
 	}
 }
