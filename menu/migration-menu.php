@@ -31,7 +31,7 @@
 				<?php if (isset($_POST['uxi-url'])): ?>
 					<div id="migrator-accordion-progress-wrap">
 						<div id="migrator-accordion-progress-inner"></div>
-						<span id="migrator-accordion-progress-percent"></span>
+						<span id="migrator-accordion-progress-text"></span>
 					</div>
 				<?php endif; ?>
 				<div class="migrator-accordion-content">

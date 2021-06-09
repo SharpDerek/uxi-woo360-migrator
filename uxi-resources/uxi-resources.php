@@ -13,7 +13,7 @@ if (!defined('UXI_RESOURCES_DIR')) {
 
 	require_once(UXI_RESOURCES_DIR.'posttypes.php');
 
-	add_action('wp_enqueue_scripts', function() {
-		wp_enqueue_style('uxi-css', UXI_RESOURCES_URL . 'assets/css/uxi-site.css');
-	});
+	// add_action('wp_enqueue_scripts', function() {
+	// 	wp_enqueue_style('uxi-css', UXI_RESOURCES_URL . 'assets/css/uxi-site.css');
+	// });
 }

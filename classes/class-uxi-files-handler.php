@@ -60,4 +60,22 @@ final class UXI_Files_Handler {
 		file_put_contents($filepath, ob_get_clean());
 	}
 
+	public static function copy_files($source, $destination) {
+		$dir = opendir($source);
+
+		@mkdir($destination);
+
+		foreach(scandir($source) as $file) {
+			if (($file != '.') && ($file != '..')) {
+				if (is_dir($source . '/' . $file)) {
+					self::copy_files($source . '/' . $file, $destination . '/' . $file);
+				} else {
+					copy($source . '/' . $file, $destination . '/' . $file);
+				}
+			}
+		}
+
+		closedir($dir);
+	}
+
 }

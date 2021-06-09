@@ -1,6 +1,6 @@
 (function($) {
 
-	function hitEndpoint(stepNumber, itemNumber) {
+	/*function hitEndpoint(stepNumber, itemNumber) {
 		const steps = Object.keys(migrationSettings.post_obj);
 
 		if (stepNumber >= steps.length) {
@@ -215,29 +215,94 @@
 	function showError(error) {
 		return '<p style="margin-bottom:0px;">Something went wrong:</p>' +
 			'<pre>' + error + '</pre>';
+	}*/
+
+	let progressInterval;
+
+	function runMigration() {
+
+		$.ajax({
+			type: "POST",
+			url: migrationUrl,
+			data: {
+				_wpnonce: nonce,
+				url: uxiUrl,
+			}
+		})
+		.done(function(response) {
+			clearInterval(progressInterval);
+			console.log(response);
+		})
+		.error(function(response) {
+			clearInterval(progressInterval);
+			console.error(response);
+		})
+		// .done(function(response) {
+		// 	hitEndpoint(stepNumber, ++itemNumber);
+		// 	updateProgress(
+		// 		stepNumber + 1,
+		// 		steps.length,
+		// 		step,
+		// 		itemNumber,
+		// 		posts.length
+		// 	);
+		// 	updateProgressLog(updateFunction(response));
+		// })
+		// .fail(function(response) {
+		// 	const errorRegex = /<!DOCTYPE[\s\S]+/g;
+		// 	const error = response.responseText.replace(errorRegex, '')
+		// 	console.error(response);
+		// 	updateProgressLog(showError(error));
+		// 	hitEndpoint(stepNumber, ++itemNumber);
+		// });
 	}
 
-	function updateProgress(curstep, totalsteps, type, curvalue, maxvalue) {
+	function getProgress() {
+		$.ajax({
+			type: "GET",
+			url: progressUrl,
+			data: {
+				_wpnonce: nonce,
+			}
+		})
+		.done(function(response) {
+			updateProgress(
+				response.message,
+				(typeof response.current_step !== "undefined" ? response.current_step : false),
+				(typeof response.max_steps !== "undefined" ? response.max_steps : false)
+			);
+		})
+	}
+
+	function updateProgress(message, curstep = false, maxsteps = false) {
 		let progwrap = $('#migrator-progress-wrap');
 		let progAwrap = $('#migrator-accordion-progress-wrap');
 		if (typeof progwrap !== "undefined") {
 			let proginner = progwrap.find("#migrator-progress-inner");
-			let progpercent = progwrap.find("#migrator-progress-percent");
+			let progpercent = progwrap.find("#migrator-progress-text");
 			let progAinner = progAwrap.find("#migrator-accordion-progress-inner");
-			let progApercent = progAwrap.find("#migrator-accordion-progress-percent");
+			let progApercent = progAwrap.find("#migrator-accordion-progress-text");
 			let title = $('title');
-			let value = Math.floor(curvalue / maxvalue * 100);
+			let value = 0;
+
+			if (curstep !== false && maxsteps !== false) {
+				value = (curstep / maxsteps) * 100;
+			}
 
 			proginner.css("width", value + "%");
 			progAinner.css("width", value + "%");
-			if (totalsteps / curstep == 1 && maxvalue / curvalue == 1) {
+
+			if (curstep !== false && maxsteps !== false && curstep == maxsteps) {
 				progpercent.html("Migration complete!!");
 				progApercent.html("Migration complete!!");
+				proginner.addClass('complete');
+				progAinner.addClass('complete');
 			} else {
-				progpercent.html(`${type} ${curvalue}/${maxvalue}<br> Step ${curstep}/${totalsteps}`);
-				progApercent.html(`${type} ${curvalue}/${maxvalue} | Step ${curstep}/${totalsteps}`);
+				progpercent.text(message);
+				progApercent.text(message);
+				proginner.removeClass('complete');
+				progAinner.removeClass('complete');
 			}
-			title.html(progpercent.html().replace("<br>", " | "));
 		}
 	}
 
@@ -252,18 +317,10 @@
 	}
 
 	$(document).ready(function() {
-		if (typeof migrationSettings !== "undefined") {
-			migrationSettings.completed_posts = [];
-
-			let debug = false;
-
-			//debug = true;
-
-			if (debug) {
-				hitEndpoint(10, 0);
-			} else {
-				hitEndpoint(0, 0);
-			}
+		if (typeof uxiUrl !== "undefined") {
+			$('a').attr('target', '_blank');
+			runMigration();
+			progressInterval = setInterval(getProgress, 500);
 		}
 		doAccordion();
 	});

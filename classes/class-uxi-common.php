@@ -5,19 +5,19 @@ final class UXI_Common {
 	public static $uxi_url = "";
 	
 	// Runs a basic cURL request
-	public static function uxi_curl($url, $encoding = "", $request = "GET") {
+	public static function uxi_curl($url = null, $encoding = "", $request = "GET", $postfields = "") {
 
 		$curl = curl_init();
 
 		curl_setopt_array($curl, array(
-		  CURLOPT_URL => $url,
+		  CURLOPT_URL => is_null($url) ? self::$uxi_url : $url,
 		  CURLOPT_RETURNTRANSFER => true,
 		  CURLOPT_ENCODING => $encoding,
 		  CURLOPT_MAXREDIRS => 10,
 		  CURLOPT_TIMEOUT => 30,
 		  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 		  CURLOPT_CUSTOMREQUEST => $request,
-		  CURLOPT_POSTFIELDS => "",
+		  CURLOPT_POSTFIELDS => $postfields,
 		  CURLOPT_FOLLOWLOCATION => true,
 		));
 
@@ -170,7 +170,15 @@ final class UXI_Common {
 
 	public static function media_url_replace($url) {
 		$new_url = preg_replace('/.+?(?=\/\d+\/\d+\/)/', untrailingslashit(wp_upload_dir()['baseurl']), $url);
-		return $new_url;
+
+		return self::remove_image_size($new_url);
+	}
+
+	public static function remove_image_size($url) {
+		if (preg_match_all('/-\d+x\d+(\..+)/', $url, $matches, PREG_PATTERN_ORDER)) {
+			$url = str_replace($matches[0][0], $matches[1][0], $url);
+		}
+		return $url;
 	}
 
 	public static function uxi_urls() {
@@ -189,26 +197,28 @@ final class UXI_Common {
 	}
 
 	public static function get_attachment_id_by_url($origin_url) {
-		$attachment_id = 0;
+		$origin_url = self::remove_image_size($origin_url);
 
-		// First, see if an image created with this function already exists
-		$args = array(
-			'post_type' => 'attachment',
-			'post_status' => 'inherit',
-			'meta_query' => array(
-				array(
-					'key' => 'origin_url',
-					'value' => $origin_url
-				)
-			)
-		);
-		$attachment_query = new WP_Query($args);
-		while($attachment_query->have_posts()) {
-			$attachment_query->the_post();
-			$attachment_id = get_the_ID();
-			break;
-		}
-		wp_reset_postdata();
+		// First, see if an image with this URL already exists
+		$attachment_id = attachment_url_to_postid($origin_url);
+		
+		// $args = array(
+		// 	'post_type' => 'attachment',
+		// 	'post_status' => 'inherit',
+		// 	'meta_query' => array(
+		// 		array(
+		// 			'key' => 'origin_url',
+		// 			'value' => $origin_url
+		// 		)
+		// 	)
+		// );
+		// $attachment_query = new WP_Query($args);
+		// while($attachment_query->have_posts()) {
+		// 	$attachment_query->the_post();
+		// 	$attachment_id = get_the_ID();
+		// 	break;
+		// }
+		// wp_reset_postdata();
 
 		// If we found an image, return its ID
 		if ($attachment_id) {
@@ -281,6 +291,40 @@ final class UXI_Common {
 		$year = date("Y");
 
 		return str_replace($year, '[fl_year]', $content);
+	}
+
+	public static function get_migration_status() {
+		return get_option('uxi_migration_status');
+	}
+
+	public static function set_migration_status($message, $current_step = false, $max_steps = false) {
+		$current_status = self::get_migration_status();
+
+		$new_status = array(
+			'message' => $message
+		);
+		if ($current_step !== false) {
+			$new_status['current_step'] = $current_step;
+		}
+		if ($max_steps !== false) {
+			$new_status['max_steps'] = $max_steps;
+		} else if (array_key_exists('max_steps', $current_status)) {
+			$new_status['max_steps'] = $current_status['max_steps'];
+		}
+
+		update_option('uxi_migration_status', $new_status);
+	}
+
+	public static function update_migration_status($message, $increment = 1) {
+		$status = self::get_migration_status();
+
+		if (array_key_exists('current_step', $status)) {
+			$status['current_step'] += $increment;
+		}
+
+		$status['message'] = $message;
+
+		update_option('uxi_migration_status', $status);
 	}
 
 }
