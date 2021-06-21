@@ -12,15 +12,36 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-style-map.php');
 final class UXI_Migration_Runner {
 
 	public static $has_locations = false;
-	public static $nonce = "";
 	public static $uxi_locations_pt = 'uxi_locations';
 	public static $wpsl_pt = 'wpsl_stores';
 
-	public static function get_migration_status(WP_REST_Request $request) {
-		if (!check_ajax_referer('wp_rest', '_wpnonce') ){
-			return "Invalid nonce";
+	public static function stop_migrator() {
+		$status = UXI_Common::get_migration_status();
+
+		if ($status == 'running') {
+			UXI_Common::set_migration_status('stopping');
+			exit("Stopping...");
+		} else {
+			UXI_Common::clear_migration_status();
+			exit("Stopped");
 		}
-		return UXI_Common::get_migration_status();
+	}
+
+	public static function check_stop_migration() {
+		$status = UXI_Common::get_migration_status();
+		if ($status !== 'running') {
+			UXI_Common::clear_migration_status();
+			wp_die('Migration Stopped', 400);
+		}
+		set_time_limit(0);
+	}
+
+	public static function get_migration_progress() {
+		return wp_send_json(UXI_Common::get_migration_progress());
+	}
+
+	public static function get_migration_status() {
+		wp_die(UXI_Common::get_migration_status());
 	}
 
 	public static function set_has_locations() {
@@ -45,6 +66,9 @@ final class UXI_Migration_Runner {
 		self::set_has_locations();
 
 		$migration_schema = array(
+			'init' => array(
+				'delete_themers'
+			),
 			'plugins' => array(
 				'uxi-resources'
 			),
@@ -61,9 +85,9 @@ final class UXI_Migration_Runner {
 				'uxi-site-css'
 			),
 			'posts' => array(
-				//'page' => array(),
-				//'post' => array(),
-				//'mad360_testimonial' => array()
+				// 'page' => array(),
+				// 'post' => array(),
+				// 'mad360_testimonial' => array()
 			),
 			'archives' => array(
 				array(
@@ -93,6 +117,7 @@ final class UXI_Migration_Runner {
 		}
 
 		foreach(array_keys($migration_schema['posts']) as $post_type) {
+			self::check_stop_migration();
 			$post_query = new WP_Query(
 				array(
 					'post_type' => $post_type,
@@ -103,6 +128,7 @@ final class UXI_Migration_Runner {
 			if ($post_query->have_posts()) {
 				$post_array = array();
 				while($post_query->have_posts()) {
+					self::check_stop_migration();
 					$post_query->the_post();
 					$id = get_the_ID();
 					$migration_schema['posts'][$post_type][] = $id;
@@ -127,6 +153,7 @@ final class UXI_Migration_Runner {
 		}
 
 		foreach($migration_schema as $key => $value) {
+			self::check_stop_migration();
 			switch($key) {
 				default:
 					break;
@@ -148,24 +175,19 @@ final class UXI_Migration_Runner {
 		return $migration_schema;
 	}
 
-	public static function run_migrator(WP_REST_Request $request) {
-		if (!check_ajax_referer('wp_rest', '_wpnonce') ){
-			return "Invalid nonce";
-		}
-
-		self::$nonce = $request['_wpnonce'];
-
-		$uxi_url = $request['url'];
+	public static function run_migrator() {
+		$uxi_url = $_POST['uxiUrl'];
 
 		if (!$uxi_url) {
-			return new WP_Error(400, "No URL Provided");
+			exit("No URL Provided");
 		}
-		
+
 		ini_set('memory_limit', -1);
 		ini_set('max_execution_time', 0);
 
 		UXI_Common::$uxi_url = $uxi_url;
-		UXI_Common::set_migration_status('Configuring Migration Schema');
+		UXI_Common::set_migration_progress('Configuring Migration Schema');
+		UXI_Common::set_migration_status('running');
 
 		$schema = self::get_migration_schema();
 		$schema_iterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($schema));
@@ -174,50 +196,81 @@ final class UXI_Migration_Runner {
 			$count++;
 		}
 
-		UXI_Common::set_migration_status('Configuring Migration Schema', 1, $count);
+		UXI_Common::set_migration_progress('Configuring Migration Schema', 1, $count);
 
 		foreach($schema as $item_key => $items) {
+			self::check_stop_migration();
 			switch($item_key) {
-				case 'plugins':
-					self::deposit_plugins($items);
+				case 'init':
+					self::do_init_functions($items);
 					break;
-				case 'icons':
-					self::deposit_icons($items);
-					break;
-				case 'global_settings':
-					self::apply_global_settings($items);
-					break;
-				case 'stylesheets':
-					self::migrate_stylesheets($items);
-					break;
-				case 'posts':
-					foreach($items as $post_type => $posts) {
-						if ($post_type == self::$uxi_locations_pt) {
-							self::convert_uxi_locations($post_type, $posts);
-						} else {
-							self::get_posts_data($post_type, $posts);
-						}
-					}
-					break;
-				case 'archives':
-				case 'endpoints':
-					self::get_items_data($item_key, $items);
-					break;
-				case 'raw_json_files':
-					self::recompile_json_files($items);
-					break;
+				// case 'plugins':
+				// 	self::deposit_plugins($items);
+				// 	break;
+				// case 'icons':
+				// 	self::deposit_icons($items);
+				// 	break;
+				// case 'global_settings':
+				// 	self::apply_global_settings($items);
+				// 	break;
+				// case 'stylesheets':
+				// 	self::migrate_stylesheets($items);
+				// 	break;
+				// case 'posts':
+				// 	foreach($items as $post_type => $posts) {
+				// 		if ($post_type == self::$uxi_locations_pt) {
+				// 			self::convert_uxi_locations($post_type, $posts);
+				// 		} else {
+				// 			self::get_posts_data($post_type, $posts);
+				// 		}
+				// 	}
+				// 	break;
+				// case 'archives':
+				// case 'endpoints':
+				// 	self::get_items_data($item_key, $items);
+				// 	break;
+				// case 'raw_json_files':
+				// 	self::recompile_json_files($items);
+				// 	break;
 				case 'compiled_json_files':
 					self::migrate_json($items);
 					break;
 			}
 		}
+		UXI_Common::clear_migration_status();
+		wp_die("Migration Complete!");
+	}
 
-		return true;
+	public static function do_init_functions($functions) {
+		foreach($functions as $function) {
+			self::check_stop_migration();
+			switch($function) {
+				case 'delete_themers':
+					self::delete_themers();
+					break;	
+			}
+		}
+	}
+
+	public static function delete_themers() {
+		$themer_query = new WP_Query(
+			array(
+				'post_type' => 'fl-theme-layout',
+				'posts_per_page' => -1,
+				'post_status' => 'any'
+			)
+		);
+		while($themer_query->have_posts()) : $themer_query->the_post();
+			$id = get_the_ID();
+			wp_delete_post($id, true);
+		endwhile;
+		UXI_Common::update_migration_progress("Clearing pre-existing themer layouts");
 	}
 
 	public static function deposit_plugins($plugins){
 
 		foreach($plugins as $plugin_name) {
+			self::check_stop_migration();
 			switch ($plugin_name) {
 				case 'uxi-resources':
 					deactivate_plugins(UXI_RESOURCES_DIRNAME . UXI_RESOURCES_FILENAME);
@@ -233,7 +286,7 @@ final class UXI_Migration_Runner {
 					$active_plugins[] = UXI_RESOURCES_DIRNAME . UXI_RESOURCES_FILENAME;
 
 					update_option('active_plugins', $active_plugins);
-					UXI_Common::update_migration_status("Installing and activating the plugin \"UXi Resources\"");
+					UXI_Common::update_migration_progress("Installing and activating the plugin \"UXi Resources\"");
 					break;
 				case 'wp-store-locator':
 					require_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
@@ -280,7 +333,7 @@ final class UXI_Migration_Runner {
 
 					$GLOBALS['wpsl']->install(false);
 
-					UXI_Common::update_migration_status("Installing and activating the plugin \"WP Store Locator\"");
+					UXI_Common::update_migration_progress("Installing and activating the plugin \"WP Store Locator\"");
 					break;
 			}
 		}
@@ -291,6 +344,7 @@ final class UXI_Migration_Runner {
 		$enabled_icons = get_option('_fl_builder_enabled_icons');
 
 		foreach($icons as $icon_dir) {
+			self::check_stop_migration();
 			UXI_Files_Handler::copy_files(
 				UXI_MIGRATOR_PATH . 'inc/' . $icon_dir,
 				trailingslashit(WP_CONTENT_DIR) . 'uploads/bb-plugin/icons/' . $icon_dir
@@ -300,7 +354,7 @@ final class UXI_Migration_Runner {
 				$enabled_icons[] = $icon_dir;
 			}
 			
-			UXI_Common::update_migration_status("Installing and enabling the icon set \"{$icon_dir}\"");
+			UXI_Common::update_migration_progress("Installing and enabling the icon set \"{$icon_dir}\"");
 		}
 
 		update_option('_fl_builder_enabled_icons', $enabled_icons);
@@ -309,6 +363,7 @@ final class UXI_Migration_Runner {
 	public static function apply_global_settings($settings_array){
 
 		foreach($settings_array as $settings_type) {
+			self::check_stop_migration();
 			switch($settings_type) {
 				default:
 				case 'site_icon':
@@ -328,7 +383,7 @@ final class UXI_Migration_Runner {
 	}
 
 	public static function apply_global_settings_site_icon() {
-		UXI_Common::update_migration_status("Updating site favicon");
+		UXI_Common::update_migration_progress("Updating site favicon");
 
 		$main_html = UXI_Common::uxi_curl();
 
@@ -360,7 +415,7 @@ final class UXI_Migration_Runner {
 	}
 
 	public static function apply_global_settings_customizer() {
-		UXI_Common::update_migration_status("Updating theme customizer settings");
+		UXI_Common::update_migration_progress("Updating theme customizer settings");
 		global $wp_customize;
 
 		$current_theme = get_stylesheet();
@@ -427,7 +482,7 @@ final class UXI_Migration_Runner {
 	}
 
 	public static function apply_global_settings_js() {
-		UXI_Common::update_migration_status("Updating Woo360 global JS");
+		UXI_Common::update_migration_progress("Updating Woo360 global JS");
 		$uxi_main_url = trailingslashit(UXI_Common::$uxi_url);
 
 		$main_html = UXI_Common::uxi_curl($uxi_main_url);
@@ -471,7 +526,7 @@ final class UXI_Migration_Runner {
 	}
 
 	public static function apply_global_settings_wpsl() {
-		UXI_Common::update_migration_status("Updating WP Store Locator settings");
+		UXI_Common::update_migration_progress("Updating WP Store Locator settings");
 		$wpsl_settings = get_option('wpsl_settings');
 
 		$wpsl_settings = array_merge($wpsl_settings, array(
@@ -491,9 +546,9 @@ final class UXI_Migration_Runner {
 		}
 
 		$index = 0;
-		UXI_Common::update_migration_status("Parsing stylesheets {$index} / " . count($stylesheets), 0);
+		UXI_Common::update_migration_progress("Parsing stylesheets {$index} / " . count($stylesheets), 0);
 		foreach($stylesheets as $stylesheet) {
-
+			self::check_stop_migration();
 			$main_html = UXI_Common::uxi_curl();
 
 			$dom = new DOMDocument();
@@ -513,7 +568,7 @@ final class UXI_Migration_Runner {
 
 			self::parse_stylesheet($stylesheet);
 			$index++;
-			UXI_Common::update_migration_status("Parsing stylesheets {$index} / " . count($stylesheets));
+			UXI_Common::update_migration_progress("Parsing stylesheets {$index} / " . count($stylesheets));
 		}
 	}
 
@@ -529,9 +584,10 @@ final class UXI_Migration_Runner {
 
 	public static function convert_uxi_locations($post_type, $posts) {
 		$index = 0;
-		UXI_Common::update_migration_status("Converting {$post_type} posts to " . self::$wpsl_pt . " posts {$index} / " . count($posts), 0);
+		UXI_Common::update_migration_progress("Converting {$post_type} posts to " . self::$wpsl_pt . " posts {$index} / " . count($posts), 0);
 
 		foreach($posts as $post_id) {
+			self::check_stop_migration();
 			$post = get_post($post_id, ARRAY_A);
 			$post['post_type'] = self::$wpsl_pt;
 
@@ -541,21 +597,23 @@ final class UXI_Migration_Runner {
 
 	public static function get_posts_data($post_type, $posts){
 		$index = 0;
-		UXI_Common::update_migration_status("Retrieving {$post_type} data {$index} / " . count($posts), 0);
+		UXI_Common::update_migration_progress("Retrieving {$post_type} data {$index} / " . count($posts), 0);
 		foreach($posts as $post_id) {
+			self::check_stop_migration();
 			self::get_post_data($post_type, $post_id);
 			$index++;
-			UXI_Common::update_migration_status("Retrieving {$post_type} data {$index} / " . count($posts));
+			UXI_Common::update_migration_progress("Retrieving {$post_type} data {$index} / " . count($posts));
 		}
 	}
 
 	public static function get_items_data($item_type, $items) {
 		$index = 0;
-		UXI_Common::update_migration_status("Retrieving {$item_type} data {$index} / " . count($items), 0);
+		UXI_Common::update_migration_progress("Retrieving {$item_type} data {$index} / " . count($items), 0);
 		foreach($items as $item) {
+			self::check_stop_migration();
 			self::get_post_data($item_type, $item['name'], $item['slug']);
 			$index++;
-			UXI_Common::update_migration_status("Retrieving {$item_type} data {$index} / " . count($item), 2);
+			UXI_Common::update_migration_progress("Retrieving {$item_type} data {$index} / " . count($item), 2);
 		}
 	}
 
@@ -568,20 +626,18 @@ final class UXI_Migration_Runner {
 		$dom = new DOMDocument();
 		@$dom->loadHTML($html);
 
-		$body_class_query = new UXI_Parse_Query(
-			'//body/@class',
-			function($class) {
-				return explode(" ", $class->value);
-			},
-			true
-		);
-
-		$body_classes = $body_class_query->run_query($dom);
-
 		$parsed_layout = array(
-			'body_classes' => $body_classes,
+			'meta' => array(),
+			'body_classes' => self::get_body_classes($dom),
 			'layouts' => array()
 		);
+
+		if ($post_type == self::$wpsl_pt) {
+			require_once(plugin_dir_path(__FILE__) . 'class-uxi-location-meta.php');
+
+			$location_meta = new UXI_Location_Meta($dom);
+			$parsed_layout['meta'] = array_merge($parsed_layout['meta'], $location_meta->meta);
+		}
 
 		foreach(UXI_Parsed_Content::$layout_sections as $layout_section) {
 			$parsed_layout_section = new UXI_Parsed_Content($layout_section, 'row', $html);
@@ -594,6 +650,20 @@ final class UXI_Migration_Runner {
 		UXI_Files_Handler::upload_file($json, $filename);
 	}
 
+	public static function get_body_classes($dom) {
+		$body_class_query = new UXI_Parse_Query(
+			'//body/@class',
+			function($class) {
+				return explode(" ", $class->value);
+			},
+			true
+		);
+
+		$body_classes = $body_class_query->run_query($dom);
+
+		return $body_classes;
+	}
+
 	public static function build_compiled_json($post_type_array){
 
 		$compiled = array(
@@ -603,8 +673,9 @@ final class UXI_Migration_Runner {
 
 		foreach($post_type_array as $post_type => $posts) {
 			$index = 0;
-			UXI_Common::update_migration_status("Searching {$post_type} data for common layouts {$index} / " . count($posts), 0);
+			UXI_Common::update_migration_progress("Searching {$post_type} data for common layouts {$index} / " . count($posts), 0);
 			foreach($posts as $post_id) {
+				self::check_stop_migration();
 				$post_layout = json_decode(UXI_Files_Handler::get_file("uxi-{$post_type}-{$post_id}.json"), true);
 
 				if (!array_key_exists($post_type, $compiled['post_types'])) {
@@ -633,19 +704,21 @@ final class UXI_Migration_Runner {
 
 				}
 				$index++;
-				UXI_Common::update_migration_status("Searching {$post_type} data for common layouts {$index} / " . count($posts), 0);
+				UXI_Common::update_migration_progress("Searching {$post_type} data for common layouts {$index} / " . count($posts), 0);
 			}
 		}
 
 		foreach($compiled['data-layouts'] as $data_layout_name => $data_layout) {
+			self::check_stop_migration();
 			if ($data_layout['instances'] < 2) {
 				unset($compiled['data-layouts'][$data_layout_name]);
 			}
 		}
 
 		foreach($compiled['post_types'] as $post_type => $layouts) {
+			self::check_stop_migration();
 			$index = 0;
-			UXI_Common::update_migration_status("Comparing common {$post_type} layouts to determine primaries {$index} / " . count($layouts), 0);
+			UXI_Common::update_migration_progress("Comparing common {$post_type} layouts to determine primaries {$index} / " . count($layouts), 0);
 			foreach($layouts as $layout_name => $data_layouts) {
 				$data_layout_main_count = 0;
 				foreach($data_layouts as $data_layout_name => $count) {
@@ -659,7 +732,7 @@ final class UXI_Migration_Runner {
 					}
 				}
 				$index++;
-				UXI_Common::update_migration_status("Comparing common {$post_type} layouts to determine primaries {$index} / " . count($layouts), 0);
+				UXI_Common::update_migration_progress("Comparing common {$post_type} layouts to determine primaries {$index} / " . count($layouts), 0);
 			}
 		}
 
@@ -681,8 +754,9 @@ final class UXI_Migration_Runner {
 
 		foreach($post_type_array as $post_type => $posts) {
 			$index = 0;
-			UXI_Common::update_migration_status("Recompiling {$post_type} data {$index} / " . count($posts), 0);
+			UXI_Common::update_migration_progress("Recompiling {$post_type} data {$index} / " . count($posts), 0);
 			foreach($posts as $post_id) {
+				self::check_stop_migration();
 				$post_layout = json_decode(UXI_Files_Handler::get_file("uxi-{$post_type}-{$post_id}.json"), true);
 
 				foreach($post_layout['layouts'] as $layout => $elements) {
@@ -699,7 +773,7 @@ final class UXI_Migration_Runner {
 				UXI_Files_Handler::upload_file($post_json, "uxi-{$post_type}-{$post_id}.json", 'updated');
 
 				$index++;
-				UXI_Common::update_migration_status("Recompiling {$post_type} data {$index} / " . count($posts));
+				UXI_Common::update_migration_progress("Recompiling {$post_type} data {$index} / " . count($posts));
 			}
 		}
 	}
@@ -711,7 +785,7 @@ final class UXI_Migration_Runner {
 		$post_types = $compiled['post_types'];
 		$data_layouts = $compiled['data_layouts'];
 
-		UXI_Common::update_migration_status("Creating Site Header themer layout", 0);
+		UXI_Common::update_migration_progress("Creating Site Header themer layout", 0);
 		$global_header = new UXI_Woo360_Themer(array(
 			'id' => UXI_Common::get_data_layout_post($globals['uxi-header'], 'header'),
 			'title' => 'Site Header',
@@ -725,7 +799,7 @@ final class UXI_Migration_Runner {
 			'compiled' => $compiled
 		));
 
-		UXI_Common::update_migration_status("Creating Default Inner Page themer layout", 0);
+		UXI_Common::update_migration_progress("Creating Default Inner Page themer layout", 0);
 		$global_main = new UXI_Woo360_Themer(array(
 			'id' => UXI_Common::get_data_layout_post($globals['uxi-main'], 'singular'),
 			'title' => 'Default Inner Page Layout',
@@ -739,7 +813,7 @@ final class UXI_Migration_Runner {
 			'compiled' => $compiled
 		));
 
-		UXI_Common::update_migration_status("Creating Site Footer themer layout", 0);
+		UXI_Common::update_migration_progress("Creating Site Footer themer layout", 0);
 		$global_footer = new UXI_Woo360_Themer(array(
 			'id' => UXI_Common::get_data_layout_post($globals['uxi-footer'], 'footer'),
 			'title' => 'Site Footer',
@@ -757,8 +831,9 @@ final class UXI_Migration_Runner {
 
 		//Do the same for the non-globals
 		$index = 0;
-		UXI_Common::update_migration_status("Creating non-global themer layouts {$index} / " . count($post_types), 0);
+		UXI_Common::update_migration_progress("Creating non-global themer layouts {$index} / " . count($post_types), 0);
 		foreach($post_types as $post_type => $layout_parts) {
+			self::check_stop_migration();
 			if ($post_type == 'endpoints') {
 				continue;
 			}
@@ -774,6 +849,7 @@ final class UXI_Migration_Runner {
 			}
 
 			foreach($layout_parts as $layout_part => $layouts) {
+				self::check_stop_migration();
 				$layout_type = '';
 
 				switch ($layout_part) {
@@ -830,7 +906,7 @@ final class UXI_Migration_Runner {
 				}
 			}
 			$index++;
-			UXI_Common::update_migration_status("Creating non-global themer layouts {$index} / " . count($post_types), 0);
+			UXI_Common::update_migration_progress("Creating non-global themer layouts {$index} / " . count($post_types), 0);
 		}
 	}
 
@@ -852,8 +928,9 @@ final class UXI_Migration_Runner {
 
 		foreach($post_type_array as $post_type => $posts) {
 			$index = 0;
-			UXI_Common::update_migration_status("Building Woo360 layout for {$post_type} {$index} / " . count($posts), 0);
+			UXI_Common::update_migration_progress("Building Woo360 layout for {$post_type} {$index} / " . count($posts), 0);
 			foreach ($posts as $post_id) {
+				self::check_stop_migration();
 				$post_data = json_decode(UXI_Files_Handler::get_file("uxi-{$post_type}-{$post_id}.json"), true);
 
 				$global_post_ids = array(
@@ -868,46 +945,47 @@ final class UXI_Migration_Runner {
 						$archive_themers = array();
 						$archive_styles = array();
 
-						$layout_title = ($post_id == 'search-results') ? 'Search Results' : ucfirst($post_type) . 'Archive';
-						$layout_location = ($post_id == 'search-results') ? 'general:search' : 'archive:' . $post_type;
+						$post_type_obj = get_post_type_object($post_id);
 
-						if ($post_data['layouts']['uxi-header'] !== get_post_meta($global_post_ids['header'], '_data_layout', true)) {
+						$layout_title = ($post_id == 'search-results') ? 'Search Results' : ucfirst($post_type_obj->labels->name) . ' Archive';
+						$layout_location = ($post_id == 'search-results') ? 'general:search' : 'archive:' . $post_id;
+
+						$header_data_layout = $post_data['layouts']['uxi-header'];
+						$main_data_layout = $post_data['layouts']['uxi-main'];
+						$footer_data_layout = $post_data['layouts']['uxi-footer'];
+
+						if ($header_data_layout !== get_post_meta($global_post_ids['header'], '_data_layout', true)) {
 							$archive_header = new UXI_Woo360_Themer(array(
-								'id' => UXI_Common::get_data_layout_post($post_data['layouts']['uxi-header'], 'header'),
+								'id' => UXI_Common::get_data_layout_post($header_data_layout, 'header'),
 								'title' => $layout_title . ' Header',
 								'type' => 'header',
-								'data_layout' => $post_data['layouts']['uxi-header'],
+								'data_layout' => $header_data_layout,
 								'locations' => array(
 									$layout_location
 								)
 							));
 							$archive_themers[] = $archive_header->themer;
 						}
-
-						if (gettype($post_data['layouts']['uxi-main']) == 'string') {
-							if ($post_data['layouts']['uxi-main'] !== get_post_meta($global_post_ids['archive'], '_data_layout', true)) {
-								$archive_main = new UXI_Woo360_Themer(array(
-									'id' => UXI_Common::get_data_layout_post($post_data['layouts']['uxi-main'], 'archive'),
-									'title' => $layout_title . ' Layout',
-									'type' => 'archive',
-									'data_layout' => $post_data['layouts']['uxi-main'],
-									'locations' => array(
-										$layout_location
-									)
-								));
-								$archive_themers[] = $archive_main->themer;
-							}
-						} else {
-							$archive_style = new UXI_Woo360_Layout($post_id, $post_data['layouts']['uxi-main']);
-							$archive_styles[] = $archive_style->style;
+						if ($main_data_layout !== get_post_meta($global_post_ids['archive'], '_data_layout', true)) {
+							var_dump($main_data_layout, UXI_Common::get_data_layout_post($main_data_layout, 'archive'));
+							$archive_main = new UXI_Woo360_Themer(array(
+								'id' => UXI_Common::get_data_layout_post($main_data_layout, 'archive'),
+								'title' => $layout_title . ' Layout',
+								'type' => 'archive',
+								'data_layout' => $main_data_layout,
+								'locations' => array(
+									$layout_location
+								)
+							));
+							$archive_themers[] = $archive_main->themer;
 						}
 
-						if ($post_data['layouts']['uxi-footer'] !== get_post_meta($global_post_ids['footer'], '_data_layout', true)) {
+						if ($footer_data_layout !== get_post_meta($global_post_ids['footer'], '_data_layout', true)) {
 							$archive_footer = new UXI_Woo360_Themer(array(
-								'id' => UXI_Common::get_data_layout_post($post_data['layouts']['uxi-footer'], 'footer'),
+								'id' => UXI_Common::get_data_layout_post($footer_data_layout, 'footer'),
 								'title' => $layout_title . ' Footer',
 								'type' => 'footer',
-								'data_layout' => $post_data['layouts']['uxi-footer'],
+								'data_layout' => $footer_data_layout,
 								'locations' => array(
 									$layout_location
 								)
@@ -983,6 +1061,10 @@ final class UXI_Migration_Runner {
 							update_option('page_for_posts', $post_id);
 						}
 
+						foreach($post_data['meta'] as $key => $value) {
+							update_post_meta($post_id, $key, $value);
+						}
+
 						if ($post_data['layouts']['uxi-header'] !== get_post_meta($global_post_ids['header'], '_data_layout', true)) {
 							$post_header = new UXI_Woo360_Themer(array(
 								'id' => UXI_Common::get_data_layout_post($post_data['layouts']['uxi-header'], 'header'),
@@ -1034,7 +1116,7 @@ final class UXI_Migration_Runner {
 						break;
 				}
 				$index++;
-				UXI_Common::update_migration_status("Building Woo360 layout for {$post_type} {$index} / " . count($posts));
+				UXI_Common::update_migration_progress("Building Woo360 layout for {$post_type} {$index} / " . count($posts));
 			}
 		}
 	}

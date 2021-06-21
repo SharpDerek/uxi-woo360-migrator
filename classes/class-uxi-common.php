@@ -5,7 +5,7 @@ final class UXI_Common {
 	public static $uxi_url = "";
 	
 	// Runs a basic cURL request
-	public static function uxi_curl($url = null, $encoding = "", $request = "GET", $postfields = "") {
+	public static function uxi_curl($url = null, $encoding = "", $request = "GET", $postfields = "", $execute = true) {
 
 		$curl = curl_init();
 
@@ -20,6 +20,10 @@ final class UXI_Common {
 		  CURLOPT_POSTFIELDS => $postfields,
 		  CURLOPT_FOLLOWLOCATION => true,
 		));
+
+		if (!$execute) {
+			return $curl;
+		}
 
 		$response = curl_exec($curl);
 		$err = curl_error($curl);
@@ -40,6 +44,9 @@ final class UXI_Common {
 	}
 
 	public static function get_data_layout_post($data_layout, $type) {
+		if (gettype($data_layout) !== 'string') {
+			return false;
+		}
 		$data_layout_query = new WP_Query(array(
 			'post_type' => 'fl-theme-layout',
 			'meta_query' => array(
@@ -294,11 +301,36 @@ final class UXI_Common {
 	}
 
 	public static function get_migration_status() {
-		return get_option('uxi_migration_status');
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", 'uxi_migration_status' ) );
+ 
+        if ( is_object( $row ) ) {
+            $value = $row->option_value;
+        }
+		return $value ? $value : null;
 	}
 
-	public static function set_migration_status($message, $current_step = false, $max_steps = false) {
-		$current_status = self::get_migration_status();
+	public static function clear_migration_status() {
+		delete_option('uxi_migration_status');
+	}
+
+	public static function set_migration_status($status) {
+		switch($status) {
+			case 'running':
+			case 'stopping':
+			case 'stopped':
+			case 'done':
+				update_option('uxi_migration_status', $status);
+				break;
+		}
+	}
+
+	public static function get_migration_progress() {
+		return get_option('uxi_migration_progress');
+	}
+
+	public static function set_migration_progress($message, $current_step = false, $max_steps = false) {
+		$current_status = self::get_migration_progress();
 
 		$new_status = array(
 			'message' => $message
@@ -312,19 +344,19 @@ final class UXI_Common {
 			$new_status['max_steps'] = $current_status['max_steps'];
 		}
 
-		update_option('uxi_migration_status', $new_status);
+		update_option('uxi_migration_progress', $new_status);
 	}
 
-	public static function update_migration_status($message, $increment = 1) {
-		$status = self::get_migration_status();
+	public static function update_migration_progress($message, $increment = 1) {
+		$progress = self::get_migration_progress();
 
-		if (array_key_exists('current_step', $status)) {
-			$status['current_step'] += $increment;
+		if (array_key_exists('current_step', $progress)) {
+			$progress['current_step'] += $increment;
 		}
 
-		$status['message'] = $message;
+		$progress['message'] = $message;
 
-		update_option('uxi_migration_status', $status);
+		update_option('uxi_migration_progress', $progress);
 	}
 
 }

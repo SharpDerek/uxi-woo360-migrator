@@ -30,19 +30,11 @@ function uxi_menu_page() {
 }
 add_action('admin_menu','uxi_menu_page');
 
-// Register Rest Endpoints
-function uxi_rest() {
-	require(UXI_MIGRATOR_PATH . 'classes/class-uxi-migration-runner.php');
-	register_rest_route('uxi-migrator', '/run', array(
-		'methods' => 'POST',
-		'callback' => 'UXI_Migration_Runner::run_migrator'
-	));
-	register_rest_route('uxi-migrator', '/get-status', array(
-		'methods' => 'GET',
-		'callback' => 'UXI_Migration_Runner::get_migration_status'
-	));
-}
-add_action('rest_api_init', 'uxi_rest');
+require(UXI_MIGRATOR_PATH . 'classes/class-uxi-migration-runner.php');
+add_action('wp_ajax_run_uxi_migrator', 'UXI_Migration_Runner::run_migrator');
+add_action('wp_ajax_get_uxi_migration_progress', 'UXI_Migration_Runner::get_migration_progress');
+add_action('wp_ajax_get_uxi_migration_status', 'UXI_Migration_Runner::get_migration_status');
+add_action('wp_ajax_stop_uxi_migration', 'UXI_Migration_Runner::stop_migrator');
 
 // Enqueue Admin Styles & Scripts
 function uxi_migrator_admin_styles_scripts() {
@@ -134,3 +126,10 @@ add_action('admin_footer', function() {
 		<?php echo ob_get_clean();
 	}
 });
+
+add_filter('register_setting_args', function ($args, $defaults, $option_group, $option_name) {
+	if ($option_group == 'wpsl_settings') {
+		$args['sanitize_callback'] = null;
+	}
+	return $args;
+}, 0, 4);
