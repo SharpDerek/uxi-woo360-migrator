@@ -78,4 +78,13 @@ final class UXI_Files_Handler {
 		closedir($dir);
 	}
 
+	public static function delete_files() {
+		$directory_iterator = new RecursiveDirectoryIterator(UXI_FILES_DIR, FilesystemIterator::SKIP_DOTS);
+		$recursive_iterator = new RecursiveIteratorIterator($directory_iterator, RecursiveIteratorIterator::CHILD_FIRST);
+
+		foreach($recursive_iterator as $file) {
+			$file->isDir() ? rmdir($file) : unlink($file);
+		}
+	}
+
 }

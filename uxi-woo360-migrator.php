@@ -133,3 +133,10 @@ add_filter('register_setting_args', function ($args, $defaults, $option_group, $
 	}
 	return $args;
 }, 0, 4);
+
+register_uninstall_hook(__FILE__, function() {
+	require(UXI_MIGRATOR_PATH . 'classes/class-uxi-files-handler.php');
+
+	UXI_Files_Handler::delete_files();
+	delete_option('uxi_migrator_site_url');
+});
