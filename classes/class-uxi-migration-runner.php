@@ -85,9 +85,9 @@ final class UXI_Migration_Runner {
 				'uxi-site-css'
 			),
 			'posts' => array(
-				// 'page' => array(),
-				// 'post' => array(),
-				// 'mad360_testimonial' => array()
+				'page' => array(),
+				'post' => array(),
+				'mad360_testimonial' => array()
 			),
 			'archives' => array(
 				array(
@@ -204,34 +204,34 @@ final class UXI_Migration_Runner {
 				case 'init':
 					self::do_init_functions($items);
 					break;
-				// case 'plugins':
-				// 	self::deposit_plugins($items);
-				// 	break;
-				// case 'icons':
-				// 	self::deposit_icons($items);
-				// 	break;
-				// case 'global_settings':
-				// 	self::apply_global_settings($items);
-				// 	break;
-				// case 'stylesheets':
-				// 	self::migrate_stylesheets($items);
-				// 	break;
-				// case 'posts':
-				// 	foreach($items as $post_type => $posts) {
-				// 		if ($post_type == self::$uxi_locations_pt) {
-				// 			self::convert_uxi_locations($post_type, $posts);
-				// 		} else {
-				// 			self::get_posts_data($post_type, $posts);
-				// 		}
-				// 	}
-				// 	break;
-				// case 'archives':
-				// case 'endpoints':
-				// 	self::get_items_data($item_key, $items);
-				// 	break;
-				// case 'raw_json_files':
-				// 	self::recompile_json_files($items);
-				// 	break;
+				case 'plugins':
+					self::deposit_plugins($items);
+					break;
+				case 'icons':
+					self::deposit_icons($items);
+					break;
+				case 'global_settings':
+					self::apply_global_settings($items);
+					break;
+				case 'stylesheets':
+					self::migrate_stylesheets($items);
+					break;
+				case 'posts':
+					foreach($items as $post_type => $posts) {
+						if ($post_type == self::$uxi_locations_pt) {
+							self::convert_uxi_locations($post_type, $posts);
+						} else {
+							self::get_posts_data($post_type, $posts);
+						}
+					}
+					break;
+				case 'archives':
+				case 'endpoints':
+					self::get_items_data($item_key, $items);
+					break;
+				case 'raw_json_files':
+					self::recompile_json_files($items);
+					break;
 				case 'compiled_json_files':
 					self::migrate_json($items);
 					break;
@@ -704,7 +704,7 @@ final class UXI_Migration_Runner {
 
 				}
 				$index++;
-				UXI_Common::update_migration_progress("Searching {$post_type} data for common layouts {$index} / " . count($posts), 0);
+				UXI_Common::update_migration_progress("Searching {$post_type} data for common layouts {$index} / " . count($posts));
 			}
 		}
 
@@ -967,7 +967,6 @@ final class UXI_Migration_Runner {
 							$archive_themers[] = $archive_header->themer;
 						}
 						if ($main_data_layout !== get_post_meta($global_post_ids['archive'], '_data_layout', true)) {
-							var_dump($main_data_layout, UXI_Common::get_data_layout_post($main_data_layout, 'archive'));
 							$archive_main = new UXI_Woo360_Themer(array(
 								'id' => UXI_Common::get_data_layout_post($main_data_layout, 'archive'),
 								'title' => $layout_title . ' Layout',

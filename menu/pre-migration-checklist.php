@@ -9,10 +9,6 @@
 			</p>
 		<?php return ob_get_clean();
 	}
-
-	function uxi_check_uploads() {
-		return array_sum((array)wp_count_attachments($mime_type = 'image')) > 0;
-	}
 ?>
 
 <div id="migration-checklist">
@@ -29,7 +25,7 @@
 
 		<li>
 			<?php echo uxi_migration_check(
-				uxi_check_uploads(),
+				!!get_option('uxi_migrator_site_url'),
 				get_dashboard_url(0, 'admin.php?import=wordpress'),
 				"Run WordPress Importer"
 			); ?>
