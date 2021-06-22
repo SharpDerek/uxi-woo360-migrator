@@ -13,3 +13,5 @@ if (file_exists($uxi_files_dir)) {
 }
 
 delete_option('uxi_migrator_site_url');
+delete_option('uxi_migration_progress');
+delete_option('uxi_migration_status');
