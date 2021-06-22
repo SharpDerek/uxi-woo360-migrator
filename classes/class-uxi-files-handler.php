@@ -85,6 +85,7 @@ final class UXI_Files_Handler {
 		foreach($recursive_iterator as $file) {
 			$file->isDir() ? rmdir($file) : unlink($file);
 		}
+		rmdir(UXI_FILES_DIR);
 	}
 
 }
