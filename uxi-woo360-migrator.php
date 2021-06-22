@@ -137,8 +137,15 @@ add_filter('register_setting_args', function ($args, $defaults, $option_group, $
 register_uninstall_hook(__FILE__, 'uxi_migration_uninstall');
 
 function uxi_migration_uninstall() {
-	require(UXI_MIGRATOR_PATH . 'classes/class-uxi-files-handler.php');
+	$uxi_files_dir = trailingslashit(WP_CONTENT_DIR) . 'uploads/uxi-files';
 
-	UXI_Files_Handler::delete_files();
+	$directory_iterator = new RecursiveDirectoryIterator($uxi_files_dir, FilesystemIterator::SKIP_DOTS);
+	$recursive_iterator = new RecursiveIteratorIterator($directory_iterator, RecursiveIteratorIterator::CHILD_FIRST);
+
+	foreach($recursive_iterator as $file) {
+		$file->isDir() ? rmdir($file) : unlink($file);
+	}
+	rmdir($uxi_files_dir);
+
 	delete_option('uxi_migrator_site_url');
 }
