@@ -9,6 +9,7 @@ if (file_exists($uxi_files_dir)) {
 	foreach($recursive_iterator as $file) {
 		$file->isDir() ? rmdir($file) : unlink($file);
 	}
+	rmdir($uxi_files_dir);
 }
 
 delete_option('uxi_migrator_site_url');
