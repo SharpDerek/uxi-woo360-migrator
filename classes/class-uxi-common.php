@@ -5,21 +5,25 @@ final class UXI_Common {
 	public static $uxi_url = "";
 	
 	// Runs a basic cURL request
-	public static function uxi_curl($url, $encoding = "", $request = "GET") {
+	public static function uxi_curl($url = null, $encoding = "", $request = "GET", $postfields = "", $execute = true) {
 
 		$curl = curl_init();
 
 		curl_setopt_array($curl, array(
-		  CURLOPT_URL => $url,
+		  CURLOPT_URL => is_null($url) ? self::$uxi_url : $url,
 		  CURLOPT_RETURNTRANSFER => true,
 		  CURLOPT_ENCODING => $encoding,
 		  CURLOPT_MAXREDIRS => 10,
 		  CURLOPT_TIMEOUT => 30,
 		  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 		  CURLOPT_CUSTOMREQUEST => $request,
-		  CURLOPT_POSTFIELDS => "",
+		  CURLOPT_POSTFIELDS => $postfields,
 		  CURLOPT_FOLLOWLOCATION => true,
 		));
+
+		if (!$execute) {
+			return $curl;
+		}
 
 		$response = curl_exec($curl);
 		$err = curl_error($curl);
@@ -40,6 +44,9 @@ final class UXI_Common {
 	}
 
 	public static function get_data_layout_post($data_layout, $type) {
+		if (gettype($data_layout) !== 'string') {
+			return false;
+		}
 		$data_layout_query = new WP_Query(array(
 			'post_type' => 'fl-theme-layout',
 			'meta_query' => array(
@@ -170,7 +177,15 @@ final class UXI_Common {
 
 	public static function media_url_replace($url) {
 		$new_url = preg_replace('/.+?(?=\/\d+\/\d+\/)/', untrailingslashit(wp_upload_dir()['baseurl']), $url);
-		return $new_url;
+
+		return self::remove_image_size($new_url);
+	}
+
+	public static function remove_image_size($url) {
+		if (preg_match_all('/-\d+x\d+(\..+)/', $url, $matches, PREG_PATTERN_ORDER)) {
+			$url = str_replace($matches[0][0], $matches[1][0], $url);
+		}
+		return $url;
 	}
 
 	public static function uxi_urls() {
@@ -189,26 +204,28 @@ final class UXI_Common {
 	}
 
 	public static function get_attachment_id_by_url($origin_url) {
-		$attachment_id = 0;
+		$origin_url = self::remove_image_size($origin_url);
 
-		// First, see if an image created with this function already exists
-		$args = array(
-			'post_type' => 'attachment',
-			'post_status' => 'inherit',
-			'meta_query' => array(
-				array(
-					'key' => 'origin_url',
-					'value' => $origin_url
-				)
-			)
-		);
-		$attachment_query = new WP_Query($args);
-		while($attachment_query->have_posts()) {
-			$attachment_query->the_post();
-			$attachment_id = get_the_ID();
-			break;
-		}
-		wp_reset_postdata();
+		// First, see if an image with this URL already exists
+		$attachment_id = attachment_url_to_postid($origin_url);
+		
+		// $args = array(
+		// 	'post_type' => 'attachment',
+		// 	'post_status' => 'inherit',
+		// 	'meta_query' => array(
+		// 		array(
+		// 			'key' => 'origin_url',
+		// 			'value' => $origin_url
+		// 		)
+		// 	)
+		// );
+		// $attachment_query = new WP_Query($args);
+		// while($attachment_query->have_posts()) {
+		// 	$attachment_query->the_post();
+		// 	$attachment_id = get_the_ID();
+		// 	break;
+		// }
+		// wp_reset_postdata();
 
 		// If we found an image, return its ID
 		if ($attachment_id) {
@@ -281,6 +298,65 @@ final class UXI_Common {
 		$year = date("Y");
 
 		return str_replace($year, '[fl_year]', $content);
+	}
+
+	public static function get_migration_status() {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", 'uxi_migration_status' ) );
+ 
+        if ( is_object( $row ) ) {
+            $value = $row->option_value;
+        }
+		return $value ? $value : null;
+	}
+
+	public static function clear_migration_status() {
+		delete_option('uxi_migration_status');
+	}
+
+	public static function set_migration_status($status) {
+		switch($status) {
+			case 'running':
+			case 'stopping':
+			case 'stopped':
+			case 'done':
+				update_option('uxi_migration_status', $status);
+				break;
+		}
+	}
+
+	public static function get_migration_progress() {
+		return get_option('uxi_migration_progress');
+	}
+
+	public static function set_migration_progress($message, $current_step = false, $max_steps = false) {
+		$current_status = self::get_migration_progress();
+
+		$new_status = array(
+			'message' => $message
+		);
+		if ($current_step !== false) {
+			$new_status['current_step'] = $current_step;
+		}
+		if ($max_steps !== false) {
+			$new_status['max_steps'] = $max_steps;
+		} else if (array_key_exists('max_steps', $current_status)) {
+			$new_status['max_steps'] = $current_status['max_steps'];
+		}
+
+		update_option('uxi_migration_progress', $new_status);
+	}
+
+	public static function update_migration_progress($message, $increment = 1) {
+		$progress = self::get_migration_progress();
+
+		if (array_key_exists('current_step', $progress)) {
+			$progress['current_step'] += $increment;
+		}
+
+		$progress['message'] = $message;
+
+		update_option('uxi_migration_progress', $progress);
 	}
 
 }

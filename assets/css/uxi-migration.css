@@ -70,13 +70,21 @@
 	display:table;
 	transition: 0.3s;
 }
-#migrator-progress-percent,
-#migrator-accordion-progress-percent {
+#migrator-progress-inner.complete,
+#migrator-accordion-progress-inner.complete {
+	background: #006dd0;
+}
+#migrator-progress-inner.uxi-migration-error,
+#migrator-accordion-progress-inner.uxi-migration-error {
+	background: #d63638;
+	width: 100% !important;
+}
+#migrator-progress-text,
+#migrator-accordion-progress-text {
 	vertical-align:middle;
 	color: white;
 	text-shadow: 1px 1px 2px black;
 	display:table-cell;
-	width:0;
 	position:relative;
 	text-align:center;
 }
@@ -136,4 +144,15 @@
 }
 #migrator-progress-log pre br {
 	display:none !important;
+}
+.button.uxi-cancel-migration {
+	background: #d63638;
+	border-color: #d63638;
+	color: white;
+}
+.button.uxi-cancel-migration:hover,
+.button.uxi-cancel-migration:focus {
+	background: #c40808;
+	border-color: #c40808;
+	color: white;
 }

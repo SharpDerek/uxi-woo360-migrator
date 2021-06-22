@@ -18,6 +18,7 @@ class UXI_Module_Loop extends UXI_Module {
 	}
 
 	function build_modules() {
+		$post_type = get_post_type($this->post_id);
 		if (UXI_Common::is_themer($this->post_id)) {
 			$settings = array(
 				'connections' => array(

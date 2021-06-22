@@ -9,7 +9,7 @@ class UXI_Style_Map {
 		'uxi-site-custom-css-parsed.json'
 	);
 
-	public static $mq_large = array(992, 1500);
+	public static $mq_large = array(992, INF);
 	public static $mq_medium = array(768, 991);
 	public static $mq_small = array(0, 767);
 
@@ -57,6 +57,13 @@ class UXI_Style_Map {
 						if (array_key_exists('value_if_exists', $schema_item)) {
 							$this->map[$schema_item_name] = $schema_item['value_if_exists'];
 						} else {
+							if ($schema_item['prepend'] && is_scalar($value)) {
+								$value = $schema_item['prepend'] . $value;
+							}
+
+							if ($schema_item['append'] && is_scalar($value)) {
+								$value = $value . $schema_item['append'];
+							}
 							$this->map[$schema_item_name] = $value;
 						}
 					}
@@ -65,7 +72,7 @@ class UXI_Style_Map {
 		}
 	}
 
-	public static function get_styles_from_selectors($selectors) {
+	public static function selector_map($selectors, $style_schema) {
 		if (!$selectors) {
 			return;
 		}
@@ -84,7 +91,8 @@ class UXI_Style_Map {
 				}
 			}
 		}
-		return $styles;
+
+		return new static($styles, $style_schema);
 	}
 
 	public static function parse_media_query($query) {

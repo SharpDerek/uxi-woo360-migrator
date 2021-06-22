@@ -1,39 +1,10 @@
 <div id="post-migration-checklist">
+	<p>UXi and Woo360 are very different platforms, and while this migrator tool tries its hardest to copy everything from UXi, it definitely won't be perfect, and there will most likely still be a lot of cleaning up to do in order for this site to look presentable. So here's what you'll need to do:</p>
 
 	<ol>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'options-media.php'); ?>" target="_blank">
-				Media settings set to match UXi Site
-			</a>
-		</li>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'tools.php?page=regenerate-thumbnails'); ?>" target="_blank">	
-				Media sizes regenerated
-			</a>
-		</li>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=page'); ?>" target="_blank">
-				All Pages checked
-			</a>
-		</li>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=post'); ?>" target="_blank">
-				All Posts checked
-			</a>
-		</li>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=mad360_testimonial'); ?>" target="_blank">
-				All Testimonials checked
-			</a>
-		</li>
-		<li>
-			<a href="<?php echo get_dashboard_url(0, 'edit.php?post_type=fl-theme-layout'); ?>" target="_blank">Themer layouts</a> renamed to something more sensible 
-		</li>
-		<li>
-			<b><a href="<?php echo get_dashboard_url(0, 'plugins.php'); ?>" target="_blank">
-				UXi Migrator plugin deactivated and deleted
-			</a></b>
-		</li>
+		<li>If you aren't satisfied with the way the site looks after the initial migration, feel free to refresh this page and run the migrator again, as many times as you feel are necessary.</li>
+		<li>Once you're satisfied with how the content from UXi has been migrated, <a href="<?php echo get_dashboard_url(0, 'plugins.php'); ?>" target="_blank"><b>Deactivate and Delete the UXi to Woo360 Migrator plugin</b></a>.</li>
+		<li>Audit each page of the site, adjusting the styles/layout/content where needed, until you're satisfied with the end result.</li>
 	</ol>
 
 </div>
