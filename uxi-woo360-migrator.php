@@ -112,6 +112,41 @@ function uxi_migrator_save_site_url() {
 }
 add_action('import_start', 'uxi_migrator_save_site_url', 5);
 
+function uxi_migrator_fix_seo_import($post_id, $key, $value) {
+	switch($key) {
+		case 'uxi_seo_index':
+			delete_post_meta($post_id, $key);
+			$key = "_yoast_wpseo_meta-robots-noindex";
+			$value = $value !== "index";
+			update_post_meta($post_id, $key, $value);
+			break;
+
+		case 'uxi_seo_follow':
+			delete_post_meta($post_id, $key);
+			$key = "_yoast_wpseo_meta-robots-nofollow";
+			$value = $value !== "follow";
+			update_post_meta($post_id, $key, $value);
+			break;
+
+		case 'uxi_seo_title':
+			delete_post_meta($post_id, $key);
+			$key = "_yoast_wpseo_title";
+			update_post_meta($post_id, $key, $value);
+			break;
+
+		case 'uxi_seo_description':
+			delete_post_meta($post_id, $key);
+			$key = "_yoast_wpseo_metadesc";
+			update_post_meta($post_id, $key, $value);
+			break;
+
+		case 'uxi_seo_post_meta_nonce':
+			delete_post_meta($post_id, $key);
+			break;
+	}
+}
+add_action('import_post_meta', 'uxi_migrator_fix_seo_import', 0, 3);
+
 
 // Warn the user about the post deletion feature when they use the XML importer.
 add_action('admin_footer', function() {

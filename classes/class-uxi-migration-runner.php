@@ -237,8 +237,10 @@ final class UXI_Migration_Runner {
 					break;
 			}
 		}
-		UXI_Common::clear_migration_status();
-		wp_die("Migration Complete!");
+		if (UXI_Common::get_migration_progress() >= $count ) {
+			UXI_Common::clear_migration_status();
+			wp_die("Migration Complete!");
+		}
 	}
 
 	public static function do_init_functions($functions) {
@@ -773,7 +775,7 @@ final class UXI_Migration_Runner {
 				UXI_Files_Handler::upload_file($post_json, "uxi-{$post_type}-{$post_id}.json", 'updated');
 
 				$index++;
-				UXI_Common::update_migration_progress("Recompiling {$post_type} data {$index} / " . count($posts));
+				//UXI_Common::update_migration_progress("Recompiling {$post_type} data {$index} / " . count($posts));
 			}
 		}
 	}

@@ -12,6 +12,7 @@ if (!defined('UXI_RESOURCES_DIR')) {
 	define ('UXI_RESOURCES_URL', plugin_dir_url(__FILE__));
 
 	require_once(UXI_RESOURCES_DIR.'posttypes.php');
+	require_once(UXI_RESOURCES_DIR.'shortcodes.php');
 
 	// add_action('wp_enqueue_scripts', function() {
 	// 	wp_enqueue_style('uxi-css', UXI_RESOURCES_URL . 'assets/css/uxi-site.css');

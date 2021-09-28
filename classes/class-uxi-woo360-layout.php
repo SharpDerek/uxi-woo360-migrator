@@ -234,6 +234,8 @@ class UXI_Woo360_Layout {
 
 					$element_sizes = $element['sizes'];
 
+					$column_settings['size_responsive'] = 100;
+
 					if (array_key_exists('palm', $element_sizes)) {
 						$column_settings['size_responsive'] = $element_sizes['palm'];
 						$column_settings['size_medium'] 	= $element_sizes['palm'];

@@ -31,7 +31,8 @@ final class UXI_Common {
 		curl_close($curl);
 
 		if ($err) {
-		  return "cURL Error #:" . $err;
+			return false;
+		  //return "cURL Error #:" . $err;
 		} else {
 		  return $response;
 		}

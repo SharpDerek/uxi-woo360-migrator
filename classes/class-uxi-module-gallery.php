@@ -7,7 +7,9 @@ class UXI_Module_Gallery extends UXI_Module {
 		$image_src_query = ".//img/@src";
 		$caption_query = ".//figcaption";
 
-		$this->gallery_settings = array();
+		$this->gallery_settings = array(
+			'layout' => 'grid'
+		);
 		$gallery_images = array();
 		$show_captions = false;
 
