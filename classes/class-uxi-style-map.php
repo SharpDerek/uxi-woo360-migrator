@@ -38,13 +38,15 @@ class UXI_Style_Map {
 							}
 						}
 
-						$value = self::format_rule_value($rule, $schema_item['att']);
+						$att = isset($schema_item['att']) ? $schema_item['att'] : false;
+
+						$value = self::format_rule_value($rule, $att);
 
 						if (array_key_exists('compare', $schema_item)) {
 							$matches = false;
 							foreach($schema_item['compare'] as $compare) {
 								if (array_key_exists($compare, $this->map)) {
-									if ($this->map['compare'] === $value) {
+									if (isset($this->map['compare']) && $this->map['compare'] === $value) {
 										$matches = true;
 										break;
 									}
@@ -57,11 +59,11 @@ class UXI_Style_Map {
 						if (array_key_exists('value_if_exists', $schema_item)) {
 							$this->map[$schema_item_name] = $schema_item['value_if_exists'];
 						} else {
-							if ($schema_item['prepend'] && is_scalar($value)) {
+							if (isset($schema_item['prepend']) && $schema_item['prepend'] && is_scalar($value)) {
 								$value = $schema_item['prepend'] . $value;
 							}
 
-							if ($schema_item['append'] && is_scalar($value)) {
+							if (isset($schema_item['append']) && $schema_item['append'] && is_scalar($value)) {
 								$value = $value . $schema_item['append'];
 							}
 							$this->map[$schema_item_name] = $value;

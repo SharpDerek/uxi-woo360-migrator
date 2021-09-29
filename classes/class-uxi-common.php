@@ -71,15 +71,16 @@ final class UXI_Common {
 		return false;
 	}
 
+	static $global_types = array(
+		'header',
+		'singular',
+		'archive',
+		'footer'
+	);
+
 	public static function get_global_post($global_type) {
-		switch($global_type) {
-			case 'header':
-			case 'singular':
-			case 'archive':
-			case 'footer':
-				break;
-			default:
-				return 0;
+		if (!in_array($global_type, self::$global_types)) {
+			return 0;
 		}
 
 		$data_layout_query = new WP_Query(array(
@@ -98,6 +99,13 @@ final class UXI_Common {
 			return $data_layout_query->posts[0]->ID;
 		}
 		return 0;
+	}
+
+	public static function get_global_data_layout($global_type) {
+		if (!in_array($global_type, self::$global_types)) {
+			return false;
+		}
+		return get_post_meta(self::get_global_post($global_type), '_data_layout', true);
 	}
 
 	public static function is_themer($post_id) {
@@ -304,7 +312,7 @@ final class UXI_Common {
 	public static function get_migration_status() {
 		global $wpdb;
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", 'uxi_migration_status' ) );
- 
+ 		$value = false;
         if ( is_object( $row ) ) {
             $value = $row->option_value;
         }

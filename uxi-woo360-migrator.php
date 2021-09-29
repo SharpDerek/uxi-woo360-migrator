@@ -30,11 +30,15 @@ function uxi_menu_page() {
 }
 add_action('admin_menu','uxi_menu_page');
 
-require(UXI_MIGRATOR_PATH . 'classes/class-uxi-migration-runner.php');
+require(UXI_MIGRATOR_PATH . 'classes/class-uxi-migration-runner-progress.php');
+require_once(UXI_MIGRATOR_PATH . '/classes/class-uxi-migration-runner.php');
 add_action('wp_ajax_run_uxi_migrator', 'UXI_Migration_Runner::run_migrator');
-add_action('wp_ajax_get_uxi_migration_progress', 'UXI_Migration_Runner::get_migration_progress');
-add_action('wp_ajax_get_uxi_migration_status', 'UXI_Migration_Runner::get_migration_status');
-add_action('wp_ajax_stop_uxi_migration', 'UXI_Migration_Runner::stop_migrator');
+add_action('wp_ajax_get_uxi_migration_progress', 'UXI_Migration_Runner_Progress::get_migration_progress');
+add_action('wp_ajax_get_uxi_migration_status', 'UXI_Migration_Runner_Progress::get_migration_status');
+add_action('wp_ajax_stop_uxi_migration', 'UXI_Migration_Runner_Progress::stop_migrator');
+
+
+
 
 // Enqueue Admin Styles & Scripts
 function uxi_migrator_admin_styles_scripts() {
@@ -75,7 +79,9 @@ function uxi_migrator_pre_import_clean() {
 			'product',
 			'nav_menu_item',
 			'uxi_locations',
-			'wpsl_stores'
+			'wpsl_stores',
+			'fl-theme-layout',
+			'fl-builder-template',
 		),
 		'post__not_in' => array($id),
 		'post_status' => 'any',
