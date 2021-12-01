@@ -71,6 +71,24 @@ final class UXI_Common {
 		return false;
 	}
 
+	public static function get_global_row($data_id) {
+		$global_row_query = new WP_Query(array(
+			'post_type' => 'fl-builder-template',
+			'meta_query' => array(
+				array(
+					'key' => '_data_id',
+					'value' => $data_id,
+					'compare' => 'LIKE'
+				)
+			)
+		));
+
+		if ($global_row_query->found_posts > 0) {
+			return $global_row_query->posts[0]->ID;
+		}
+		return false;
+	}
+
 	static $global_types = array(
 		'header',
 		'singular',

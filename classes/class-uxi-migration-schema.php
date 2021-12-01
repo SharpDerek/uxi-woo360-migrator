@@ -11,7 +11,7 @@ class UXI_Migration_Schema {
 
 		$this->migration_schema = array(
 			'init' => array(
-				'delete_themers'
+				'delete_themers_and_saved'
 			),
 			'plugins' => array(
 				'uxi-resources'

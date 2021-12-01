@@ -46,7 +46,7 @@ final class UXI_Files_Handler {
 		$location = trailingslashit(UXI_FILES_DEBUG_DIR);
 		$filepath = $location . $filename;
 
-		file_put_contents($filepath, $contents, FILE_APPEND);
+		file_put_contents($filepath, $contents . "\n", FILE_APPEND);
 	}
 
 	public static function var_dump($contents, $filename) {
@@ -57,7 +57,7 @@ final class UXI_Files_Handler {
 
 		ob_start();
 		var_dump($contents);
-		file_put_contents($filepath, ob_get_clean());
+		file_put_contents($filepath, ob_get_clean(), FILE_APPEND);
 	}
 
 	public static function copy_files($source, $destination) {

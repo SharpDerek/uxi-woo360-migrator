@@ -5,9 +5,7 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-woo360-layout.php');
 
 class UXI_Woo360_Themer {
 
-	public $id;
 	public $data_layout;
-	public $themer;
 
 	public function __construct($args) {
 		$defaults = array(
@@ -34,12 +32,6 @@ class UXI_Woo360_Themer {
 			$this->do_save_post($id);
 
 			$this->data_layout = $data_layout;
-
-			$this->id = $id;
-			$this->themer = array(
-				'url' => get_edit_post_link($id),
-				'title' => $title
-			);
 		}
 	}
 

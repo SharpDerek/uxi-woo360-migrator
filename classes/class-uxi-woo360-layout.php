@@ -6,27 +6,27 @@ require_once(plugin_dir_path(__FILE__) . 'class-uxi-style-map.php');
 
 class UXI_Woo360_Layout {
 
-	public $style;
 	public $post_id;
 
 	public function __construct($post_id, $uxi_layout_styling) {
 		$this->post_id = $post_id;
 		if ($uxi_layout_styling) {
-			$this->build_post_nodes($uxi_layout_styling);
+			FLBuilderModel::set_post_id($this->post_id);
+			FLBuilderModel::enable();
+			FLBuilderModel::delete_post($this->post_id);
+			$element_node_ids = $this->build_post_nodes($uxi_layout_styling);
+			$this->update_post_node_settings($element_node_ids, $uxi_layout_styling);
 		}
-		$this->style = array(
-			'url' => get_permalink($this->post_id),
-			'title' => get_the_title($this->post_id)
-		);
 	}
 
 	function build_post_nodes($uxi_layout_styling) {
-		FLBuilderModel::set_post_id($this->post_id);
-		FLBuilderModel::enable();
-		FLBuilderModel::delete_post($this->post_id);
 		$element_node_ids = array();
 		$auto_col = null;
 		foreach($uxi_layout_styling as $element_id => $element) {
+			if (!is_array($element)) {
+				$element_node_ids[$element_id . '_row'] = $this->add_global_row($element);
+				continue;
+			}
 			$parent_id = $element['parent_id'];
 			switch($element['element_type']) {
 				case 'row':
@@ -75,7 +75,37 @@ class UXI_Woo360_Layout {
 			}
 		}
 
-		$this->update_post_node_settings($element_node_ids, $uxi_layout_styling);
+		return $element_node_ids;
+	}
+
+	function add_global_row($global_row_data_id) {
+		$global_row_data_id = intval($global_row_data_id);
+
+		$global_row = UXI_Common::get_global_row($global_row_data_id);
+
+		if (!$global_row) { // No global row post found, need to create
+			$compiled = json_decode(UXI_Files_Handler::get_file('uxi-compiled.json'), true);
+			$global_row_styling = $compiled['global_modules'][$global_row_data_id]['elements'];
+			$global_row_settings = array(
+				"name" => "Global Row #{$global_row_data_id}",
+				"global" => true
+			);
+
+			$element_node_ids = $this->build_post_nodes($global_row_styling);
+			$row_node = $element_node_ids[array_keys($element_node_ids)[0]];
+
+			$global_row_data = FLBuilderModel::save_node_template($row_node->node, $global_row_settings);
+			$global_row = $global_row_data['postID'];
+			update_post_meta($global_row, '_data_id', $global_row_data_id);
+		}
+
+		$template_id = get_post_meta($global_row, '_fl_builder_template_id', true);
+		$template_data = FLBuilderModel::get_layout_data( 'published', $global_row );
+		$template_data = FLBuilderModel::generate_new_node_ids( $template_data );
+
+		$global_row_node = FLBuilderModel::get_node_template_root( 'row', $template_data );
+
+		return $global_row_node;
 	}
 
 	function update_post_node_settings($element_node_ids, $uxi_layout_styling) {
@@ -255,6 +285,15 @@ class UXI_Woo360_Layout {
 					break;
 			}
 		}
+
+		// Ensure nodes get properly added to the builder for this post
+		$data = array();
+
+		foreach($element_node_ids as $node_id => $node) {
+			$data[$node->node] = $node;
+		}
+
+		FLBuilderModel::update_layout_data($data, null, $this->post_id);
 	}
 
 	function add_widget_node($element, $parent_node) {

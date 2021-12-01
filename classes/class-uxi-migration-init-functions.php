@@ -9,7 +9,7 @@ final class UXI_Migration_Init_Functions {
 		foreach($functions as $function) {
 			UXI_Migration_Runner_Progress::check_stop_migration();
 			switch($function) {
-				case 'delete_themers':
+				case 'delete_themers_and_saved':
 					self::delete_themers();
 					break;	
 			}
@@ -19,7 +19,7 @@ final class UXI_Migration_Init_Functions {
 	public static function delete_themers() {
 		$themer_query = new WP_Query(
 			array(
-				'post_type' => 'fl-theme-layout',
+				'post_type' => array('fl-theme-layout', 'fl-builder-template'),
 				'posts_per_page' => -1,
 				'post_status' => 'any'
 			)
@@ -28,6 +28,6 @@ final class UXI_Migration_Init_Functions {
 			$id = get_the_ID();
 			wp_delete_post($id, true);
 		endwhile;
-		UXI_Common::update_migration_progress("Clearing pre-existing themer layouts");
+		UXI_Common::update_migration_progress("Clearing pre-existing themer layouts and templates");
 	}
 }
