@@ -23,7 +23,7 @@ final class UXI_Migration_Compile_JSON {
 					if (array_key_exists($data_layout, $compiled['data-layouts'])) {
 						$post_layout['layouts'][$layout] = $data_layout;
 					} else {
-						//$post_layout['layouts'][$layout] = self::apply_global_modules($elements, $compiled['global_modules']);
+						$post_layout['layouts'][$layout] = self::apply_global_modules($elements, $compiled['global_modules']);
 					}
 				}
 
