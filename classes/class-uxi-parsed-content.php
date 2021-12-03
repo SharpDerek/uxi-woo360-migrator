@@ -49,7 +49,6 @@ class UXI_Parsed_Content {
 					$this_element = $this->UXI_Element($query_element);
 
 					$childHTML = $this->childHTML($query_element);
-					//UXI_Files_Handler::debug_log($childHTML, 'column_' . $this_element->id . '.html');
 					$nested_rows = new UXI_Parsed_Content($this->layout_section, 'row_nested', $childHTML, $this->all_content, $this_element->id);
 					$widgets = new UXI_Parsed_Content($this->layout_section, 'widget', $childHTML, $this->all_content, $this_element->id);
 

@@ -140,6 +140,8 @@
 				progApercent.html("Migration complete!");
 				proginner.addClass('complete');
 				progAinner.addClass('complete');
+				proginner.css("width", "100%");
+				progAinner.css("width", "100%");
 			} else {
 				progpercent.text(message);
 				progApercent.text(message);

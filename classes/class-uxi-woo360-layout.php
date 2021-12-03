@@ -15,7 +15,6 @@ class UXI_Woo360_Layout {
 			FLBuilderModel::enable();
 			FLBuilderModel::delete_post($this->post_id);
 			$element_node_ids = $this->build_post_nodes($uxi_layout_styling);
-			$this->update_post_node_settings($element_node_ids, $uxi_layout_styling);
 		}
 	}
 
@@ -75,6 +74,8 @@ class UXI_Woo360_Layout {
 			}
 		}
 
+		$this->update_post_node_settings($element_node_ids, $uxi_layout_styling);
+
 		return $element_node_ids;
 	}
 
@@ -109,6 +110,8 @@ class UXI_Woo360_Layout {
 	}
 
 	function update_post_node_settings($element_node_ids, $uxi_layout_styling) {
+		$compiled = json_decode(UXI_Files_Handler::get_file('uxi-compiled.json'), true);
+
 		foreach($uxi_layout_styling as $element_id => $element) {
 			$node = $element_node_ids[$element_id];
 			switch($element['element_type']) {
@@ -290,7 +293,11 @@ class UXI_Woo360_Layout {
 		$data = array();
 
 		foreach($element_node_ids as $node_id => $node) {
-			$data[$node->node] = $node;
+			if (property_exists($node, 'template_id')) {
+				$data[$node->node] = $node;
+			} else {
+				$data[$node->node] = FLBuilderModel::get_node($node->node);
+			}
 		}
 
 		FLBuilderModel::update_layout_data($data, null, $this->post_id);
